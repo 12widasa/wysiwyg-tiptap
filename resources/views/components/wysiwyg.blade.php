@@ -486,7 +486,7 @@
 
     {{-- ── Editor Area ── --}}
     <div id="{{ $id }}"
-        class="wysiwyg-editor outline-none px-12 py-7 text-[15px] leading-[1.8] text-gray-900"
+        class="wysiwyg-editor wysiwyg-prose outline-none px-12 py-7 text-[15px] leading-[1.8] text-gray-900"
         style="min-height: {{ $height }}px; caret-color: #6b4fbb" aria-label="Editor" aria-multiline="true">
     </div>
 
@@ -552,256 +552,266 @@
         @vite('resources/js/wysiwyg.js')
         <script>
             document.addEventListener('alpine:init', () => {
-                Alpine.data('wysiwygEditor', (config) => ({
-                    id: config.id,
-                    name: config.name,
-                    editorHtml: config.value ?? '',
-                    placeholder: config.placeholder,
-                    uploadUrl: config.uploadUrl,
-                    height: config.height,
+                Alpine.data('wysiwygEditor', (config) => {
+                    // instance store — TIDAK disimpan di Alpine reactive state
+                    // agar Proxy Alpine tidak wrap object Tiptap (→ performa & bug)
+                    let _instance = null;
 
-                    // Toolbar state
-                    structLabel: 'Paragraph',
-                    fontSize: '15px',
-                    inTable: false,
-                    statWords: '0 words',
-                    statChars: '0 chars',
-                    statNode: 'paragraph',
+                    // Helper: ambil editor Tiptap dari instance
+                    const _ed = () => _instance?.editor ?? null;
 
-                    // Colors
-                    hlColors: ["#fef08a", "#fde68a", "#fed7aa", "#fecaca", "#d9f99d", "#bbf7d0", "#bae6fd",
-                        "#c7d2fe", "#f5d0fe", "#fbcfe8", "#e0f2fe", "#ccfbf1", "#fff7ed", "#f0fdf4",
-                        "#eff6ff", "#fdf4ff"
-                    ],
-                    txtColors: ["#111827", "#374151", "#6b7280", "#9ca3af", "#ef4444", "#f97316", "#eab308",
-                        "#22c55e", "#3b82f6", "#8b5cf6", "#ec4899", "#14b8a6", "#92400e", "#1e3a5f",
-                        "#4d7c0f", "#ffffff"
-                    ],
+                    return {
+                        id: config.id,
+                        name: config.name,
+                        editorHtml: config.value ?? '',
+                        placeholder: config.placeholder,
+                        uploadUrl: config.uploadUrl,
+                        height: config.height,
 
-                    // Link bubble
-                    linkBubble: {
-                        visible: false,
-                        top: 0,
-                        left: 0,
-                        title: '',
-                        url: ''
-                    },
-                    _savedSelection: null,
+                        // ── Toolbar state ──
+                        structLabel: 'Paragraph',
+                        fontSize: '15px',
+                        inTable: false,
+                        statWords: '0 words',
+                        statChars: '0 chars',
+                        statNode: 'paragraph',
 
-                    // Ambil editor dari window map — TIDAK disimpan di Alpine reactive
-                    _editor() {
-                        return window._wysiwygInstances?.[this.id] ?? null;
-                    },
+                        // ── Colors ──
+                        hlColors: [
+                            '#fef08a', '#fde68a', '#fed7aa', '#fecaca', '#d9f99d', '#bbf7d0', '#bae6fd',
+                            '#c7d2fe', '#f5d0fe', '#fbcfe8', '#e0f2fe', '#ccfbf1', '#fff7ed', '#f0fdf4',
+                            '#eff6ff', '#fdf4ff',
+                        ],
+                        txtColors: [
+                            '#111827', '#374151', '#6b7280', '#9ca3af', '#ef4444', '#f97316', '#eab308',
+                            '#22c55e', '#3b82f6', '#8b5cf6', '#ec4899', '#14b8a6', '#92400e', '#1e3a5f',
+                            '#4d7c0f', '#ffffff',
+                        ],
 
-                    init() {
-                        this.$nextTick(() => {
-                            const editorInstance = window.initWysiwyg({
-                                editorEl: document.getElementById(this.id),
-                                initialContent: this.editorHtml,
-                                placeholder: this.placeholder,
-                                uploadUrl: this.uploadUrl,
-                                onUpdate: (html) => {
-                                    this.editorHtml = html;
-                                },
-                                onSelectionUpdate: () => {
-                                    this._syncToolbar();
-                                },
-                            });
-                            window._wysiwygInstances = window._wysiwygInstances || {};
-                            window._wysiwygInstances[this.id] = editorInstance;
-                            this._syncToolbar();
-                        });
-                    },
+                        // ── Link bubble ──
+                        linkBubble: {
+                            visible: false,
+                            top: 0,
+                            left: 0,
+                            title: '',
+                            url: ''
+                        },
+                        _savedSelection: null,
 
-                    cmd(name, ...args) {
-                        const ed = this._editor();
-                        if (!ed) return;
-                        let chain = ed.chain();
-                        if (args.length) chain = chain[name](...args);
-                        else chain = chain[name]();
-                        chain.run();
-                        ed.view.focus();
-                    },
-
-                    isActive(name, attrs) {
-                        return this._editor()?.isActive(name, attrs) ?? false;
-                    },
-
-                    setFontSize(size) {
-                        const ed = this._editor();
-                        if (!ed) return;
-                        ed.chain().setMark('textStyle', {
-                            fontSize: size + 'px'
-                        }).run();
-                        ed.view.focus();
-                        this.fontSize = size + 'px';
-                    },
-
-                    setAlign(align) {
-                        const ed = this._editor();
-                        if (!ed) return;
-                        const {
-                            state
-                        } = ed;
-                        const figurePos = window._getFigurePos(state);
-                        if (figurePos !== null) {
-                            const figNode = state.doc.nodeAt(figurePos);
-                            if (figNode) {
-                                const {
-                                    tr
-                                } = state;
-                                tr.setNodeMarkup(figurePos, undefined, {
-                                    ...figNode.attrs,
-                                    align
+                        // ── Lifecycle ──
+                        init() {
+                            this.$nextTick(() => {
+                                _instance = window.initWysiwyg({
+                                    editorEl: document.getElementById(this.id),
+                                    initialContent: this.editorHtml,
+                                    placeholder: this.placeholder,
+                                    uploadUrl: this.uploadUrl,
+                                    onUpdate: (html) => {
+                                        this.editorHtml = html;
+                                    },
+                                    onSelectionUpdate: () => {
+                                        this._syncToolbar();
+                                    },
                                 });
-                                ed.view.dispatch(tr);
+                                this._syncToolbar();
+                            });
+                        },
+
+                        // FIX: destroy dipanggil Alpine saat component di-remove dari DOM
+                        // (Livewire navigate, Turbo, SPA routing)
+                        destroy() {
+                            _instance?.destroy();
+                            _instance = null;
+                        },
+
+                        // ── Editor commands ──
+                        cmd(name, ...args) {
+                            const ed = _ed();
+                            if (!ed) return;
+                            let chain = ed.chain();
+                            chain = args.length ? chain[name](...args) : chain[name]();
+                            chain.run();
+                            ed.view.focus();
+                        },
+
+                        isActive(name, attrs) {
+                            return _ed()?.isActive(name, attrs) ?? false;
+                        },
+
+                        setFontSize(size) {
+                            const ed = _ed();
+                            if (!ed) return;
+                            ed.chain().setMark('textStyle', {
+                                fontSize: size + 'px'
+                            }).run();
+                            ed.view.focus();
+                            this.fontSize = size + 'px';
+                        },
+
+                        setAlign(align) {
+                            const ed = _ed();
+                            if (!ed) return;
+                            // FIX: gunakan getFigurePos dari instance, bukan window._getFigurePos
+                            const figurePos = _instance.getFigurePos();
+                            if (figurePos !== null) {
+                                const figNode = ed.state.doc.nodeAt(figurePos);
+                                if (figNode) {
+                                    const {
+                                        tr
+                                    } = ed.state;
+                                    tr.setNodeMarkup(figurePos, undefined, {
+                                        ...figNode.attrs,
+                                        align
+                                    });
+                                    ed.view.dispatch(tr);
+                                }
+                            } else {
+                                ed.chain().setTextAlign(align).run();
                             }
-                        } else {
-                            ed.chain().setTextAlign(align).run();
-                        }
-                        ed.view.focus();
-                    },
+                            ed.view.focus();
+                        },
 
-                    alignActive(align) {
-                        const ed = this._editor();
-                        if (!ed) return false;
-                        const figureAlign = window._getFigureAlign(ed);
-                        if (figureAlign !== null) return figureAlign === align;
-                        return ed.isActive({
-                            textAlign: align
-                        });
-                    },
+                        alignActive(align) {
+                            if (!_instance) return false;
+                            // FIX: gunakan getFigureAlign dari instance, bukan window._getFigureAlign
+                            const figureAlign = _instance.getFigureAlign();
+                            if (figureAlign !== null) return figureAlign === align;
+                            return _ed()?.isActive({
+                                textAlign: align
+                            }) ?? false;
+                        },
 
-                    openLinkBubble() {
-                        const ed = this._editor();
-                        if (!ed) return;
-                        const {
-                            from,
-                            to,
-                            empty
-                        } = ed.state.selection;
-                        this._savedSelection = {
-                            from,
-                            to,
-                            empty
-                        };
-                        let title = '';
-                        if (!empty) {
-                            const slice = ed.state.doc.slice(from, to);
-                            title = slice.content.textBetween(0, slice.content.size, ' ');
-                        }
-                        this.linkBubble.title = title;
-                        this.linkBubble.url = '';
-                        const shell = this.$refs.shell;
-                        const rect = shell.getBoundingClientRect();
-                        const toolbarH = shell.querySelector('[role="toolbar"]')?.getBoundingClientRect()
-                            .height ?? 48;
-                        this.linkBubble.top = rect.top + toolbarH + 8;
-                        this.linkBubble.left = rect.left + rect.width / 2;
-                        this.linkBubble.visible = true;
-                        this.$nextTick(() => {
-                            this.$refs.linkUrlInput.focus();
-                        });
-                    },
+                        openLinkBubble() {
+                            const ed = _ed();
+                            if (!ed) return;
+                            const {
+                                from,
+                                to,
+                                empty
+                            } = ed.state.selection;
+                            this._savedSelection = {
+                                from,
+                                to,
+                                empty
+                            };
+                            let title = '';
+                            if (!empty) {
+                                const slice = ed.state.doc.slice(from, to);
+                                title = slice.content.textBetween(0, slice.content.size, ' ');
+                            }
+                            this.linkBubble.title = title;
+                            this.linkBubble.url = '';
+                            const shell = this.$refs.shell;
+                            const rect = shell.getBoundingClientRect();
+                            const toolbarH = shell.querySelector('[role="toolbar"]')?.getBoundingClientRect()
+                                .height ?? 48;
+                            this.linkBubble.top = rect.top + toolbarH + 8;
+                            this.linkBubble.left = rect.left + rect.width / 2;
+                            this.linkBubble.visible = true;
+                            this.$nextTick(() => this.$refs.linkUrlInput.focus());
+                        },
 
-                    closeLinkBubble() {
-                        this.linkBubble.visible = false;
-                        this.linkBubble.title = '';
-                        this.linkBubble.url = '';
-                        this._savedSelection = null;
-                    },
+                        closeLinkBubble() {
+                            this.linkBubble.visible = false;
+                            this.linkBubble.title = '';
+                            this.linkBubble.url = '';
+                            this._savedSelection = null;
+                        },
 
-                    applyLink() {
-                        const ed = this._editor();
-                        if (!ed) return;
-                        const raw = this.linkBubble.url.trim();
-                        const title = this.linkBubble.title.trim();
-                        const safeUrl = window._sanitizeUrl(raw);
-                        if (!safeUrl) {
-                            this.closeLinkBubble();
-                            return;
-                        }
+                        applyLink() {
+                            const ed = _ed();
+                            if (!ed) return;
+                            // FIX: gunakan window._sanitizeUrl yang masih di-expose
+                            const safeUrl = window._sanitizeUrl(this.linkBubble.url.trim());
+                            if (!safeUrl) {
+                                this.closeLinkBubble();
+                                return;
+                            }
 
-                        const sel = this._savedSelection;
-                        if (sel && !sel.empty) {
-                            if (title) {
-                                ed.chain()
-                                    .setTextSelection({
-                                        from: sel.from,
-                                        to: sel.to
-                                    })
-                                    .insertContent(
-                                        `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer">${title}</a>`
-                                        )
-                                    .run();
+                            const sel = this._savedSelection;
+                            const title = this.linkBubble.title.trim();
+
+                            if (sel && !sel.empty) {
+                                if (title) {
+                                    ed.chain()
+                                        .setTextSelection({
+                                            from: sel.from,
+                                            to: sel.to
+                                        })
+                                        .insertContent(
+                                            `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer">${title}</a>`
+                                            )
+                                        .run();
+                                } else {
+                                    ed.chain()
+                                        .setTextSelection({
+                                            from: sel.from,
+                                            to: sel.to
+                                        })
+                                        .setLink({
+                                            href: safeUrl,
+                                            target: '_blank',
+                                            rel: 'noopener noreferrer'
+                                        })
+                                        .run();
+                                }
                             } else {
                                 ed.chain()
-                                    .setTextSelection({
-                                        from: sel.from,
-                                        to: sel.to
-                                    })
-                                    .setLink({
-                                        href: safeUrl,
-                                        target: '_blank',
-                                        rel: 'noopener noreferrer'
-                                    })
+                                    .insertContent(
+                                        `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer">${title || safeUrl}</a>`
+                                        )
                                     .run();
                             }
-                        } else {
-                            ed.chain()
-                                .insertContent(
-                                    `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer">${title || safeUrl}</a>`
-                                    )
-                                .run();
-                        }
-                        this.closeLinkBubble();
-                    },
+                            this.closeLinkBubble();
+                        },
 
-                    insertDropzone() {
-                        const ed = this._editor();
-                        if (!ed) return;
-                        ed.chain().insertContent({
-                            type: 'imageDropzone'
-                        }).run();
-                        ed.view.focus();
-                    },
+                        insertDropzone() {
+                            const ed = _ed();
+                            if (!ed) return;
+                            ed.chain().insertContent({
+                                type: 'imageDropzone'
+                            }).run();
+                            ed.view.focus();
+                        },
 
-                    _syncToolbar() {
-                        const ed = this._editor();
-                        if (!ed) return;
+                        // ── Sync toolbar state dari editor ──
+                        _syncToolbar() {
+                            const ed = _ed();
+                            if (!ed) return;
 
-                        // Structure label
-                        let label = 'Paragraph';
-                        for (let i = 1; i <= 6; i++) {
-                            if (ed.isActive('heading', {
-                                    level: i
-                                })) {
-                                label = `Heading ${i}`;
-                                break;
+                            // Structure label
+                            let label = 'Paragraph';
+                            for (let i = 1; i <= 6; i++) {
+                                if (ed.isActive('heading', {
+                                        level: i
+                                    })) {
+                                    label = `Heading ${i}`;
+                                    break;
+                                }
                             }
-                        }
-                        if (ed.isActive('blockquote')) label = 'Quote';
-                        this.structLabel = label;
+                            if (ed.isActive('blockquote')) label = 'Quote';
+                            this.structLabel = label;
 
-                        // Font size
-                        this.fontSize = ed.getAttributes('textStyle').fontSize || '15px';
+                            // Font size
+                            this.fontSize = ed.getAttributes('textStyle').fontSize || '15px';
 
-                        // Table
-                        this.inTable = ed.isActive('table');
+                            // Table context
+                            this.inTable = ed.isActive('table');
 
-                        // Word/char count
-                        const txt = ed.getText();
-                        const trimmed = txt.trim();
-                        this.statWords = (trimmed ? trimmed.split(/\s+/).length : 0) + ' words';
-                        this.statChars = txt.length + ' chars';
+                            // Word / char count
+                            const txt = ed.getText();
+                            const trimmed = txt.trim();
+                            this.statWords = (trimmed ? trimmed.split(/\s+/).length : 0) + ' words';
+                            this.statChars = txt.length + ' chars';
 
-                        // Node name
-                        const node = ed.state.selection.$anchor.parent;
-                        let nodeName = node.type.name;
-                        if (nodeName === 'heading') nodeName = 'h' + node.attrs.level;
-                        this.statNode = nodeName;
-                    },
-                }));
+                            // Current node name
+                            const node = ed.state.selection.$anchor.parent;
+                            let nodeName = node.type.name;
+                            if (nodeName === 'heading') nodeName = 'h' + node.attrs.level;
+                            this.statNode = nodeName;
+                        },
+                    };
+                });
             });
         </script>
     @endpush

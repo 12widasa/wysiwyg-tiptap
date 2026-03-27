@@ -8,6 +8,13 @@ Route::get('/', function () {
 });
 
 Route::get('/content/create', [ContentController::class, 'create'])->name('content.create');
-Route::post('/content', [ContentController::class, 'store'])->name('content.store');
 Route::get('/content/{content}', [ContentController::class, 'show'])->name('content.show');
-Route::post('/content/upload-image', [ContentController::class, 'uploadImage'])->name('content.upload-image');
+
+// Rate limited: store maks 30x/menit, upload maks 20x/menit per IP
+Route::post('/content', [ContentController::class, 'store'])
+    ->middleware('throttle:30,1')
+    ->name('content.store');
+
+Route::post('/content/upload-image', [ContentController::class, 'uploadImage'])
+    ->middleware('throttle:20,1')
+    ->name('content.upload-image');

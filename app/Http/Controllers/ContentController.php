@@ -4,8 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Content;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
-
+use Illuminate\Support\Str;
 
 class ContentController extends Controller
 {
@@ -14,41 +13,20 @@ class ContentController extends Controller
         return view('content.create');
     }
 
-public function store(Request $request)
-{
-    $request->validate([
-        'description' => ['required', 'string'],
-    ]);
+    public function store(Request $request)
+    {
+        $request->validate([
+            'description' => ['required', 'string', 'max:500000'],
+        ]);
 
-    $dirty = $request->input('description');
+        // HTMLPurifier via mews/purifier — figure/figcaption kini di-allow
+        // langsung di purifier.php, tidak perlu regex bypass lagi.
+        $clean = clean($request->input('description'));
 
-    // Ekstrak semua figure sebelum purifier
-    $figures = [];
-    $dirty = preg_replace_callback(
-        '/<figure[^>]*>.*?<\/figure>/si',
-        function ($matches) use (&$figures) {
-            $key = 'FIGUREPH' . count($figures) . 'ENDPH';
-            $figures[$key] = $matches[0];
-            // Taruh key sebagai teks biasa dalam paragraf
-            return '<p>' . $key . '</p>';
-        },
-        $dirty
-    );
+        $content = Content::create(['description' => $clean]);
 
-    // Sanitasi sisanya dengan purifier
-    $clean = clean($dirty);
-
-    // Kembalikan figure — cari <p>FIGUREPH0ENDPH</p>
-    foreach ($figures as $key => $figure) {
-        $safeFigure = preg_replace('/on\w+="[^"]*"/i', '', $figure);
-        $safeFigure = preg_replace('/javascript:/i', '', $safeFigure);
-        $clean = str_replace('<p>' . $key . '</p>', $safeFigure, $clean);
+        return redirect()->route('content.show', $content->id);
     }
-
-    $content = Content::create(['description' => $clean]);
-
-    return redirect()->route('content.show', $content->id);
-}
 
     public function show(Content $content)
     {
@@ -58,10 +36,19 @@ public function store(Request $request)
     public function uploadImage(Request $request)
     {
         $request->validate([
-            'image' => ['required', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:5120'],
+            'image' => [
+                'required',
+                'image',
+                'mimes:jpeg,png,jpg,gif,webp',
+                'max:5120',                                   // maks 5 MB
+                'dimensions:max_width=4096,max_height=4096',  // cegah decompression bomb
+            ],
         ]);
 
-        $path = $request->file('image')->store('content-images', 'public');
+        // Nama file acak — hindari path traversal & filename injection
+        $ext      = strtolower($request->file('image')->getClientOriginalExtension());
+        $filename = Str::uuid() . '.' . $ext;
+        $path     = $request->file('image')->storeAs('content-images', $filename, 'public');
 
         return response()->json([
             'url' => asset('storage/' . $path),

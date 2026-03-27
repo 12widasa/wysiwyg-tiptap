@@ -16,28 +16,33 @@ import TaskItem from "@tiptap/extension-task-item";
 import Image from "@tiptap/extension-image";
 import { TextSelection } from "prosemirror-state";
 
-// ── Constants ──
+// ── Constants ──────────────────────────────────────────────────────────────
 const NODE_NAMES = Object.freeze({
-    IMAGE_FIGURE: "imageFigure",
+    IMAGE_FIGURE:   "imageFigure",
     IMAGE_DROPZONE: "imageDropzone",
-    PARAGRAPH: "paragraph",
-    HEADING: "heading",
-    BLOCKQUOTE: "blockquote",
-    BULLET_LIST: "bulletList",
-    ORDERED_LIST: "orderedList",
-    TASK_LIST: "taskList",
-    LIST_ITEM: "listItem",
-    TASK_ITEM: "taskItem",
+    PARAGRAPH:      "paragraph",
+    HEADING:        "heading",
+    BLOCKQUOTE:     "blockquote",
+    BULLET_LIST:    "bulletList",
+    ORDERED_LIST:   "orderedList",
+    TASK_LIST:      "taskList",
+    LIST_ITEM:      "listItem",
+    TASK_ITEM:      "taskItem",
 });
 
 const ALIGN = Object.freeze({
-    LEFT: "left",
-    CENTER: "center",
-    RIGHT: "right",
+    LEFT:    "left",
+    CENTER:  "center",
+    RIGHT:   "right",
     JUSTIFY: "justify",
 });
 
-const FILE_MAX_BYTES = 5 * 1024 * 1024;
+const FILE_MAX_BYTES  = 5 * 1024 * 1024;   // 5 MB
+const RESIZE_MIN_PX   = 80;
+const RESIZE_MAX_PCT  = 100;                // % dari container — dicek saat mouseup
+const INDENT_STEP     = 24;
+const INDENT_MAX      = 8;
+const TOOLBAR_DEBOUNCE_MS = 60;            // debounce _syncToolbar
 
 const INDENTABLE = Object.freeze([
     NODE_NAMES.BULLET_LIST,
@@ -48,12 +53,12 @@ const INDENTABLE = Object.freeze([
     NODE_NAMES.BLOCKQUOTE,
 ]);
 const SKIP_INSIDE = Object.freeze([NODE_NAMES.LIST_ITEM, NODE_NAMES.TASK_ITEM]);
-const INDENT_STEP = 24;
-const INDENT_MAX = 8;
 
-// ── Utilities ──
+// ── Utilities ──────────────────────────────────────────────────────────────
+
+/** Validasi URL — hanya izinkan http/https/mailto, kembalikan null jika tidak valid */
 function sanitizeUrl(raw) {
-    const trimmed = raw.trim();
+    const trimmed = (raw ?? "").trim();
     if (!trimmed) return null;
     try {
         const url = new URL(trimmed);
@@ -64,30 +69,17 @@ function sanitizeUrl(raw) {
     }
 }
 
-function escapeHtml(str) {
-    return str
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;");
+/** Buat debounce wrapper sederhana */
+function debounce(fn, ms) {
+    let timer;
+    return (...args) => {
+        clearTimeout(timer);
+        timer = setTimeout(() => fn(...args), ms);
+    };
 }
 
-// ── Expose helpers ke Alpine (dipanggil dari wysiwyg.blade.php) ──
-window._sanitizeUrl = sanitizeUrl;
-
-window._getFigureAlign = function (editor) {
-    const { selection } = editor.state;
-    const { $from } = selection;
-    for (let d = $from.depth; d >= 0; d--) {
-        if ($from.node(d).type.name === NODE_NAMES.IMAGE_FIGURE)
-            return $from.node(d).attrs.align || ALIGN.LEFT;
-    }
-    if (selection.node?.type.name === NODE_NAMES.IMAGE_FIGURE)
-        return selection.node.attrs.align || ALIGN.LEFT;
-    return null;
-};
-
-window._getFigurePos = function (state) {
+/** Cari posisi node imageFigure di selection, atau null */
+function getFigurePos(state) {
     const { selection } = state;
     const { $from } = selection;
     for (let d = $from.depth; d >= 0; d--) {
@@ -97,146 +89,165 @@ window._getFigurePos = function (state) {
     if (selection.node?.type.name === NODE_NAMES.IMAGE_FIGURE)
         return selection.from;
     return null;
-};
+}
 
-// ── Upload gambar ke server ──
-async function uploadImage(file, uploadUrl) {
-    const csrfToken = document.querySelector(
-        'meta[name="csrf-token"]',
-    )?.content;
+/** Ambil align dari imageFigure yang sedang di-select, atau null */
+function getFigureAlign(editor) {
+    const { selection } = editor.state;
+    const { $from } = selection;
+    for (let d = $from.depth; d >= 0; d--) {
+        if ($from.node(d).type.name === NODE_NAMES.IMAGE_FIGURE)
+            return $from.node(d).attrs.align || ALIGN.LEFT;
+    }
+    if (selection.node?.type.name === NODE_NAMES.IMAGE_FIGURE)
+        return selection.node.attrs.align || ALIGN.LEFT;
+    return null;
+}
+
+// Expose hanya yang benar-benar dibutuhkan oleh Alpine di blade
+// getFigureAlign & getFigurePos tidak perlu di window — dipanggil lewat
+// initWysiwyg yang mengembalikan editor instance, Alpine memanggil metode
+// helper via wrapper yang kita berikan di bawah.
+window._sanitizeUrl = sanitizeUrl;
+
+// ── Upload gambar ke server ────────────────────────────────────────────────
+
+/**
+ * Upload file ke server.
+ * @param {File}   file
+ * @param {string} uploadUrl
+ * @param {AbortSignal} signal  — batalkan request jika dropzone diganti
+ * @returns {Promise<string>}   URL gambar yang diupload
+ */
+async function uploadImage(file, uploadUrl, signal) {
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
     if (!csrfToken) throw new Error("CSRF token tidak ditemukan");
 
     const formData = new FormData();
     formData.append("image", file);
 
     const res = await fetch(uploadUrl, {
-        method: "POST",
+        method:  "POST",
         headers: { "X-CSRF-TOKEN": csrfToken },
-        body: formData,
+        body:    formData,
+        signal,                 // AbortSignal untuk cancel
     });
 
     if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.message || "Upload gagal");
+        throw new Error(err.message || `Upload gagal (HTTP ${res.status})`);
     }
 
     const data = await res.json();
+    if (typeof data?.url !== "string" || !data.url.startsWith("http"))
+        throw new Error("Response upload tidak valid");
+
     return data.url;
 }
 
-// ── ImageFigure Node ──
+// ── ImageFigure Node ───────────────────────────────────────────────────────
 const ImageFigureNode = Node.create({
-    name: NODE_NAMES.IMAGE_FIGURE,
-    group: "block",
-    atom: false,
-    isolating: true,
+    name:       NODE_NAMES.IMAGE_FIGURE,
+    group:      "block",
+    atom:       false,
+    isolating:  true,
     selectable: true,
-    draggable: true,
+    draggable:  true,
 
     addAttributes() {
         return {
-            src: { default: null },
-            alt: { default: "" },
-            width: { default: null },
+            src:     { default: null },
+            alt:     { default: "" },
+            width:   { default: null },
             caption: { default: "" },
-            align: { default: ALIGN.LEFT },
+            align:   { default: ALIGN.LEFT },
         };
     },
 
     parseHTML() {
         return [{ tag: `figure[data-type="${NODE_NAMES.IMAGE_FIGURE}"]` }];
     },
+
     renderHTML({ HTMLAttributes }) {
-        const alignClass =
-            {
-                left: "img-figure--left",
-                center: "img-figure--center",
-                right: "img-figure--right",
-                justify: "img-figure--left",
-            }[HTMLAttributes.align || "left"] || "img-figure--left";
+        const alignClass = {
+            left:    "img-figure--left",
+            center:  "img-figure--center",
+            right:   "img-figure--right",
+            justify: "img-figure--left",
+        }[HTMLAttributes.align || "left"] ?? "img-figure--left";
 
-        const nodes = [
-            [
-                "img",
-                {
-                    src: HTMLAttributes.src || "",
-                    alt: HTMLAttributes.alt || "",
-                    style: HTMLAttributes.width
-                        ? `width:${HTMLAttributes.width}px;max-width:100%`
-                        : "max-width:100%",
-                    class: "img-figure__img",
-                },
-            ],
-        ];
+        const imgAttrs = {
+            src:   HTMLAttributes.src || "",
+            alt:   HTMLAttributes.alt || "",
+            style: HTMLAttributes.width
+                ? `width:${HTMLAttributes.width}px;max-width:100%`
+                : "max-width:100%",
+            class: "img-figure__img",
+        };
 
+        const children = [["img", imgAttrs]];
         if (HTMLAttributes.caption) {
-            nodes.push([
-                "figcaption",
-                { class: "img-caption" },
-                HTMLAttributes.caption,
-            ]);
+            children.push(["figcaption", { class: "img-caption" }, HTMLAttributes.caption]);
         }
 
         return [
             "figure",
             {
-                "data-type": NODE_NAMES.IMAGE_FIGURE,
-                "data-src": HTMLAttributes.src,
-                "data-alt": HTMLAttributes.alt,
-                "data-width": HTMLAttributes.width,
+                "data-type":    NODE_NAMES.IMAGE_FIGURE,
+                "data-src":     HTMLAttributes.src,
+                "data-alt":     HTMLAttributes.alt,
+                "data-width":   HTMLAttributes.width,
                 "data-caption": HTMLAttributes.caption,
-                "data-align": HTMLAttributes.align,
+                "data-align":   HTMLAttributes.align,
                 class: `img-figure ${alignClass}`,
             },
-            ...nodes,
+            ...children,
         ];
     },
 
     addNodeView() {
         return ({ node, editor: ed, getPos }) => {
+            // ── DOM setup ──
             const wrap = document.createElement("div");
-            wrap.className = "img-figure";
+            wrap.className      = "img-figure";
             wrap.contentEditable = "false";
             if (node.attrs.width) wrap.style.width = node.attrs.width + "px";
 
-            function applyAlign(align) {
-                wrap.classList.remove(
-                    "img-figure--left",
-                    "img-figure--center",
-                    "img-figure--right",
-                );
-                wrap.classList.add(
-                    `img-figure--${align === ALIGN.JUSTIFY ? ALIGN.LEFT : align}`,
-                );
-            }
+            const applyAlign = (align) => {
+                wrap.classList.remove("img-figure--left", "img-figure--center", "img-figure--right");
+                wrap.classList.add(`img-figure--${align === ALIGN.JUSTIFY ? ALIGN.LEFT : align}`);
+            };
             applyAlign(node.attrs.align || ALIGN.LEFT);
 
             const img = document.createElement("img");
-            img.src = node.attrs.src || "";
-            img.alt = node.attrs.alt || "";
             img.className = "img-figure__img";
+            img.alt = node.attrs.alt || "";
+            // src set terakhir agar onload/onerror sudah terpasang
             img.onload = () => {
                 if (!node.attrs.width) {
-                    wrap.style.width = img.naturalWidth + "px";
+                    wrap.style.width    = img.naturalWidth + "px";
                     wrap.style.maxWidth = "100%";
                 }
                 img.removeAttribute("data-error");
             };
             img.onerror = () => {
                 img.setAttribute("data-error", "true");
-                img.alt = img.alt || "Image failed to load";
+                if (!img.alt) img.alt = "Image failed to load";
             };
+            img.src = node.attrs.src || "";
 
             const handle = document.createElement("div");
             handle.className = "resize-handle";
-            handle.title = "Drag to resize";
-            handle.innerHTML = `<svg viewBox="0 0 24 24"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>`;
+            handle.title     = "Drag to resize";
+            handle.setAttribute("aria-hidden", "true");
+            handle.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>`;
 
             const caption = document.createElement("textarea");
-            caption.className = "img-caption";
+            caption.className   = "img-caption";
             caption.placeholder = "Add a caption…";
-            caption.rows = 1;
-            caption.value = node.attrs.caption || "";
+            caption.rows        = 1;
+            caption.value       = node.attrs.caption || "";
+            caption.setAttribute("aria-label", "Image caption");
 
             wrap.appendChild(img);
             wrap.appendChild(handle);
@@ -244,7 +255,7 @@ const ImageFigureNode = Node.create({
 
             let currentAttrs = { ...node.attrs };
 
-            // ── Resize ──
+            // ── Resize (dengan max-width guard) ──
             let startX, startW;
             handle.addEventListener("mousedown", (e) => {
                 e.preventDefault();
@@ -253,16 +264,17 @@ const ImageFigureNode = Node.create({
                 startW = wrap.offsetWidth;
                 wrap.classList.add("selected");
 
+                const containerW = wrap.parentElement?.offsetWidth ?? Infinity;
+                const maxW = containerW > 0 ? containerW : Infinity;
+
                 const onMove = (e) => {
-                    const newW = Math.max(80, startW + (e.clientX - startX));
+                    const newW = Math.min(maxW, Math.max(RESIZE_MIN_PX, startW + (e.clientX - startX)));
                     wrap.style.width = newW + "px";
                 };
                 const onUp = (e) => {
-                    const newW = Math.round(
-                        Math.max(80, startW + (e.clientX - startX)),
-                    );
                     document.removeEventListener("mousemove", onMove);
                     document.removeEventListener("mouseup", onUp);
+                    const newW = Math.round(Math.min(maxW, Math.max(RESIZE_MIN_PX, startW + (e.clientX - startX))));
                     const pos = getPos();
                     if (typeof pos !== "number") return;
                     currentAttrs = { ...currentAttrs, width: newW };
@@ -276,25 +288,24 @@ const ImageFigureNode = Node.create({
 
             // ── Caption events ──
             caption.addEventListener("mousedown", (e) => e.stopPropagation());
-            caption.addEventListener("click", (e) => e.stopPropagation());
-            caption.addEventListener("keyup", (e) => e.stopPropagation());
-            caption.addEventListener("keypress", (e) => e.stopPropagation());
+            caption.addEventListener("click",     (e) => e.stopPropagation());
+            caption.addEventListener("keyup",     (e) => e.stopPropagation());
+            caption.addEventListener("keypress",  (e) => e.stopPropagation());
 
             caption.addEventListener("keydown", (e) => {
                 e.stopPropagation();
                 e.stopImmediatePropagation();
 
                 const { state } = ed;
-                const { tr } = state;
+                const { tr }    = state;
 
                 if (e.key === "Backspace" || e.key === "Delete") {
                     e.preventDefault();
-                    e.stopImmediatePropagation();
-
                     const start = caption.selectionStart;
-                    const end = caption.selectionEnd;
-                    const val = caption.value;
+                    const end   = caption.selectionEnd;
+                    const val   = caption.value;
 
+                    // Backspace pada caption kosong → fokus ke editor
                     if (e.key === "Backspace" && val.trim() === "") {
                         caption.blur();
                         const pos = getPos();
@@ -303,40 +314,22 @@ const ImageFigureNode = Node.create({
                             const $pos = tr.doc.resolve(pos);
                             tr.setSelection(TextSelection.near($pos));
                             ed.view.dispatch(tr);
-                            ed.view.focus();
-                        } catch {
-                            ed.view.focus();
-                        }
+                        } catch { /* best effort */ }
+                        ed.view.focus();
                         return;
                     }
 
                     if (e.key === "Backspace") {
-                        if (start !== end) {
-                            caption.value =
-                                val.slice(0, start) + val.slice(end);
-                            caption.selectionStart = caption.selectionEnd =
-                                start;
-                        } else if (start > 0) {
-                            caption.value =
-                                val.slice(0, start - 1) + val.slice(start);
-                            caption.selectionStart = caption.selectionEnd =
-                                start - 1;
-                        }
+                        caption.value = start !== end
+                            ? val.slice(0, start) + val.slice(end)
+                            : start > 0 ? val.slice(0, start - 1) + val.slice(start) : val;
+                        caption.selectionStart = caption.selectionEnd = start !== end ? start : Math.max(0, start - 1);
+                    } else {
+                        caption.value = start !== end
+                            ? val.slice(0, start) + val.slice(end)
+                            : start < val.length ? val.slice(0, start) + val.slice(start + 1) : val;
+                        caption.selectionStart = caption.selectionEnd = start;
                     }
-                    if (e.key === "Delete") {
-                        if (start !== end) {
-                            caption.value =
-                                val.slice(0, start) + val.slice(end);
-                            caption.selectionStart = caption.selectionEnd =
-                                start;
-                        } else if (start < val.length) {
-                            caption.value =
-                                val.slice(0, start) + val.slice(start + 1);
-                            caption.selectionStart = caption.selectionEnd =
-                                start;
-                        }
-                    }
-
                     caption.dispatchEvent(new Event("input"));
                     return;
                 }
@@ -352,31 +345,23 @@ const ImageFigureNode = Node.create({
                 if (!figureNode) return;
 
                 const afterPos = pos + figureNode.nodeSize;
-                const docSize = state.doc.content.size;
-                let nextNode =
-                    afterPos < docSize ? state.doc.nodeAt(afterPos) : null;
+                const nextNode = afterPos < state.doc.content.size ? state.doc.nodeAt(afterPos) : null;
 
-                if (nextNode && nextNode.isBlock) {
+                if (nextNode?.isBlock) {
                     try {
                         const $pos = tr.doc.resolve(afterPos);
                         tr.setSelection(TextSelection.near($pos));
                         ed.view.dispatch(tr);
-                        ed.view.focus();
-                    } catch {
-                        ed.view.focus();
-                    }
+                    } catch { /* best effort */ }
                 } else {
-                    const paragraph = state.schema.nodes["paragraph"].create();
-                    tr.insert(afterPos, paragraph);
+                    tr.insert(afterPos, state.schema.nodes[NODE_NAMES.PARAGRAPH].create());
                     try {
                         const $pos = tr.doc.resolve(afterPos);
                         tr.setSelection(TextSelection.near($pos));
-                    } catch {
-                        /* fallback */
-                    }
+                    } catch { /* fallback */ }
                     ed.view.dispatch(tr);
-                    ed.view.focus();
                 }
+                ed.view.focus();
             });
 
             caption.addEventListener("input", () => {
@@ -388,16 +373,11 @@ const ImageFigureNode = Node.create({
                 const val = caption.value.trim();
                 caption.value = val;
                 const pos = getPos();
-                if (typeof pos !== "number" || val === currentAttrs.caption)
-                    return;
+                if (typeof pos !== "number" || val === currentAttrs.caption) return;
                 currentAttrs = { ...currentAttrs, caption: val };
                 const { tr, selection } = ed.state;
                 tr.setNodeMarkup(pos, undefined, { ...currentAttrs });
-                try {
-                    tr.setSelection(selection.map(tr.doc, tr.mapping));
-                } catch {
-                    /* stale */
-                }
+                try { tr.setSelection(selection.map(tr.doc, tr.mapping)); } catch { /* stale */ }
                 ed.view.dispatch(tr);
             });
 
@@ -412,9 +392,9 @@ const ImageFigureNode = Node.create({
             wrap.addEventListener("click", onWrapClick);
             document.addEventListener("click", onDocClick);
 
+            // ── NodeView callbacks ──
             const update = (updatedNode) => {
-                if (updatedNode.type.name !== NODE_NAMES.IMAGE_FIGURE)
-                    return false;
+                if (updatedNode.type.name !== NODE_NAMES.IMAGE_FIGURE) return false;
                 currentAttrs = { ...updatedNode.attrs };
                 if (updatedNode.attrs.src && updatedNode.attrs.src !== img.src)
                     img.src = updatedNode.attrs.src;
@@ -426,21 +406,23 @@ const ImageFigureNode = Node.create({
                 return true;
             };
 
-            const destroy = () =>
+            // FIX: destroy harus hapus SEMUA document listener agar tidak memory leak
+            const destroy = () => {
                 document.removeEventListener("click", onDocClick);
+            };
 
             return { dom: wrap, update, destroy };
         };
     },
 });
 
-// ── ImageDropzone Node ──
+// ── ImageDropzone Node ─────────────────────────────────────────────────────
 const ImageDropzoneNode = Node.create({
-    name: NODE_NAMES.IMAGE_DROPZONE,
-    group: "block",
-    atom: true,
+    name:       NODE_NAMES.IMAGE_DROPZONE,
+    group:      "block",
+    atom:       true,
     selectable: true,
-    draggable: false,
+    draggable:  false,
 
     parseHTML() {
         return [{ tag: `div[data-type="${NODE_NAMES.IMAGE_DROPZONE}"]` }];
@@ -451,84 +433,79 @@ const ImageDropzoneNode = Node.create({
 
     addNodeView() {
         return ({ editor: ed, getPos }) => {
-            // uploadUrl diambil dari dataset editor element (di-set saat init)
-            const uploadUrl =
-                ed.options.element.dataset.uploadUrl || "/content/upload-image";
+            const uploadUrl = ed.options.element.dataset.uploadUrl || "/content/upload-image";
 
             const dom = document.createElement("div");
-            dom.className = "img-dropzone";
-            dom.contentEditable = "false";
+            dom.className        = "img-dropzone";
+            dom.contentEditable  = "false";
+            dom.setAttribute("role", "button");
+            dom.setAttribute("aria-label", "Upload image");
             dom.innerHTML = `
-<input type="file" accept="image/*" class="img-file-input" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%">
-<div class="img-dropzone-icon">
+<input type="file" accept="image/jpeg,image/png,image/gif,image/webp" class="img-file-input" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%" aria-hidden="true">
+<div class="img-dropzone-icon" aria-hidden="true">
     <div class="file-body"></div>
     <div class="upload-circle">
-        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px" aria-hidden="true">
             <line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/>
         </svg>
     </div>
 </div>
 <p class="img-dropzone-text"><strong>Click to upload</strong> or drag and drop</p>
 <p class="img-dropzone-hint">PNG, JPG, GIF, WEBP — max 5MB</p>
-<p class="img-dropzone-status" style="font-size:12px;color:#6b4fbb;display:none;">Mengupload...</p>`;
+<p class="img-dropzone-status" style="font-size:12px;color:#6b4fbb;display:none;" aria-live="polite">Uploading…</p>`;
 
             function insertFigure(url, alt) {
                 const pos = getPos();
                 if (typeof pos !== "number") return;
                 const { state } = ed;
-                const { tr } = state;
-                const figureNode = state.schema.nodes[
-                    NODE_NAMES.IMAGE_FIGURE
-                ].create({
-                    src: url,
-                    alt,
-                    width: null,
-                    caption: "",
-                    align: ALIGN.LEFT,
+                const { tr }    = state;
+                const figureNode = state.schema.nodes[NODE_NAMES.IMAGE_FIGURE].create({
+                    src: url, alt, width: null, caption: "", align: ALIGN.LEFT,
                 });
                 tr.replaceWith(pos, pos + 1, figureNode);
                 const afterFigure = pos + figureNode.nodeSize;
                 let hasBlockAfter = false;
-                tr.doc.nodesBetween(
-                    afterFigure,
-                    tr.doc.content.size,
-                    (n, p) => {
-                        if (!hasBlockAfter && n.isBlock && p >= afterFigure)
-                            hasBlockAfter = true;
-                    },
-                );
+                tr.doc.nodesBetween(afterFigure, tr.doc.content.size, (n, p) => {
+                    if (!hasBlockAfter && n.isBlock && p >= afterFigure) hasBlockAfter = true;
+                });
                 if (!hasBlockAfter)
-                    tr.insert(
-                        afterFigure,
-                        state.schema.nodes[NODE_NAMES.PARAGRAPH].create(),
-                    );
+                    tr.insert(afterFigure, state.schema.nodes[NODE_NAMES.PARAGRAPH].create());
                 try {
-                    tr.setSelection(
-                        TextSelection.create(tr.doc, afterFigure + 1),
-                    );
-                } catch {
-                    /* best effort */
-                }
+                    tr.setSelection(TextSelection.create(tr.doc, afterFigure + 1));
+                } catch { /* best effort */ }
                 ed.view.dispatch(tr);
                 ed.view.focus();
             }
 
+            // FIX: AbortController untuk cancel upload jika dropzone sudah diganti
+            let currentAbort = null;
+
             async function handleFile(file) {
                 if (!file.type.startsWith("image/")) return;
                 if (file.size > FILE_MAX_BYTES) {
-                    alert(
-                        `File terlalu besar. Maksimal 5MB, ukuran: ${(file.size / 1024 / 1024).toFixed(1)}MB`,
-                    );
+                    alert(`File terlalu besar. Maksimal 5 MB, ukuran: ${(file.size / 1024 / 1024).toFixed(1)} MB`);
                     return;
                 }
+
+                // Batalkan upload sebelumnya jika masih berjalan
+                currentAbort?.abort();
+                currentAbort = new AbortController();
+
                 const status = dom.querySelector(".img-dropzone-status");
+                const fileInput = dom.querySelector(".img-file-input");
                 status.style.display = "block";
+                if (fileInput) fileInput.disabled = true;
+
                 try {
-                    const url = await uploadImage(file, uploadUrl);
+                    const url = await uploadImage(file, uploadUrl, currentAbort.signal);
                     insertFigure(url, file.name);
                 } catch (err) {
-                    alert("Upload gagal: " + err.message);
+                    if (err.name === "AbortError") return; // dibatalkan — tidak perlu alert
                     status.style.display = "none";
+                    if (fileInput) fileInput.disabled = false;
+                    alert("Upload gagal: " + err.message);
+                } finally {
+                    currentAbort = null;
                 }
             }
 
@@ -536,14 +513,12 @@ const ImageDropzoneNode = Node.create({
             fileInput.addEventListener("change", (e) => {
                 const file = e.target.files?.[0];
                 if (file) handleFile(file);
+                // Reset value agar file yang sama bisa di-upload lagi
+                e.target.value = "";
             });
-            dom.addEventListener("dragover", (e) => {
-                e.preventDefault();
-                dom.classList.add("drag-over");
-            });
-            dom.addEventListener("dragleave", () =>
-                dom.classList.remove("drag-over"),
-            );
+
+            dom.addEventListener("dragover",  (e) => { e.preventDefault(); dom.classList.add("drag-over"); });
+            dom.addEventListener("dragleave", ()  => dom.classList.remove("drag-over"));
             dom.addEventListener("drop", (e) => {
                 e.preventDefault();
                 dom.classList.remove("drag-over");
@@ -551,12 +526,15 @@ const ImageDropzoneNode = Node.create({
                 if (file) handleFile(file);
             });
 
-            return { dom };
+            // FIX: destroy batalkan upload yang sedang berjalan
+            const destroy = () => { currentAbort?.abort(); };
+
+            return { dom, destroy };
         };
     },
 });
 
-// ── Indent Extension ──
+// ── Indent Extension ───────────────────────────────────────────────────────
 function isInsideList($from) {
     for (let d = $from.depth - 1; d >= 0; d--) {
         if (SKIP_INSIDE.includes($from.node(d).type.name)) return true;
@@ -566,16 +544,16 @@ function isInsideList($from) {
 
 function indentNodes(state, delta) {
     const { selection, tr } = state;
-    const { from, to } = selection;
-    let changed = false;
-    const handled = new Set();
+    const { from, to }      = selection;
+    let changed             = false;
+    const handled           = new Set();
 
     state.doc.nodesBetween(from, to, (node, pos) => {
         if (!INDENTABLE.includes(node.type.name)) return true;
         if (isInsideList(state.doc.resolve(pos))) return true;
         if (handled.has(pos)) return false;
         handled.add(pos);
-        const cur = node.attrs.indent || 0;
+        const cur  = node.attrs.indent || 0;
         const next = cur + delta;
         if (next < 0 || next > INDENT_MAX) return false;
         tr.setNodeMarkup(pos, undefined, { ...node.attrs, indent: next });
@@ -589,69 +567,70 @@ function indentNodes(state, delta) {
 const IndentExtension = Extension.create({
     name: "indent",
     addGlobalAttributes() {
-        return [
-            {
-                types: INDENTABLE,
-                attributes: {
-                    indent: {
-                        default: 0,
-                        parseHTML: (el) =>
-                            Math.round(
-                                (parseFloat(
-                                    el.style.marginLeft || el.style.paddingLeft,
-                                ) || 0) / INDENT_STEP,
-                            ) || 0,
-                        renderHTML: (attrs) =>
-                            attrs.indent
-                                ? {
-                                      style: `margin-left: ${attrs.indent * INDENT_STEP}px`,
-                                  }
-                                : {},
-                    },
+        return [{
+            types: INDENTABLE,
+            attributes: {
+                indent: {
+                    default: 0,
+                    parseHTML: (el) =>
+                        Math.round((parseFloat(el.style.marginLeft || el.style.paddingLeft) || 0) / INDENT_STEP) || 0,
+                    renderHTML: (attrs) =>
+                        attrs.indent ? { style: `margin-left: ${attrs.indent * INDENT_STEP}px` } : {},
                 },
             },
-        ];
+        }];
     },
     addCommands() {
         return {
-            indent:
-                () =>
-                ({ state, dispatch }) => {
-                    const { tr, changed } = indentNodes(state, +1);
-                    if (changed && dispatch) dispatch(tr);
-                    return changed;
-                },
-            outdent:
-                () =>
-                ({ state, dispatch }) => {
-                    const { tr, changed } = indentNodes(state, -1);
-                    if (changed && dispatch) dispatch(tr);
-                    return changed;
-                },
+            indent:  () => ({ state, dispatch }) => {
+                const { tr, changed } = indentNodes(state, +1);
+                if (changed && dispatch) dispatch(tr);
+                return changed;
+            },
+            outdent: () => ({ state, dispatch }) => {
+                const { tr, changed } = indentNodes(state, -1);
+                if (changed && dispatch) dispatch(tr);
+                return changed;
+            },
         };
     },
 });
 
-// ── initWysiwyg — entry point dipanggil dari Alpine component ──
+// ── initWysiwyg — public API ───────────────────────────────────────────────
+/**
+ * Inisialisasi editor Tiptap pada elemen yang diberikan.
+ *
+ * @param {object} opts
+ * @param {HTMLElement} opts.editorEl        - elemen container editor
+ * @param {string}      opts.initialContent  - HTML awal (opsional)
+ * @param {string}      opts.placeholder     - teks placeholder
+ * @param {string}      opts.uploadUrl       - endpoint upload gambar
+ * @param {Function}    opts.onUpdate        - callback(html) saat konten berubah
+ * @param {Function}    opts.onSelectionUpdate - callback(editor) saat selection berubah
+ * @returns {{ editor, getFigureAlign, getFigurePos, destroy }}
+ */
 window.initWysiwyg = function ({
     editorEl,
-    initialContent = "",
-    placeholder = "Mulai menulis di sini…",
-    uploadUrl = "/content/upload-image",
+    initialContent    = "",
+    placeholder       = "Mulai menulis di sini…",
+    uploadUrl         = "/content/upload-image",
     onUpdate,
     onSelectionUpdate,
 }) {
     // Simpan uploadUrl di dataset agar bisa diakses ImageDropzoneNode
     editorEl.dataset.uploadUrl = uploadUrl;
 
+    // FIX: debounce selection callback agar tidak trigger _syncToolbar tiap keystroke
+    const debouncedSelectionUpdate = debounce((editor) => {
+        onSelectionUpdate?.(editor);
+    }, TOOLBAR_DEBOUNCE_MS);
+
     const editor = new Editor({
         element: editorEl,
         extensions: [
             StarterKit.configure({ link: false, underline: false }),
             Underline,
-            TextAlign.configure({
-                types: [NODE_NAMES.HEADING, NODE_NAMES.PARAGRAPH],
-            }),
+            TextAlign.configure({ types: [NODE_NAMES.HEADING, NODE_NAMES.PARAGRAPH] }),
             Link.configure({ openOnClick: false }),
             Image,
             TextStyle.extend({
@@ -659,12 +638,9 @@ window.initWysiwyg = function ({
                     return {
                         ...this.parent?.(),
                         fontSize: {
-                            default: null,
-                            parseHTML: (el) => el.style.fontSize || null,
-                            renderHTML: (attrs) =>
-                                attrs.fontSize
-                                    ? { style: `font-size: ${attrs.fontSize}` }
-                                    : {},
+                            default:    null,
+                            parseHTML:  (el)    => el.style.fontSize || null,
+                            renderHTML: (attrs) => attrs.fontSize ? { style: `font-size: ${attrs.fontSize}` } : {},
                         },
                     };
                 },
@@ -687,9 +663,18 @@ window.initWysiwyg = function ({
             onUpdate?.(editor.getHTML());
         },
         onSelectionUpdate({ editor }) {
-            onSelectionUpdate?.(editor);
+            debouncedSelectionUpdate(editor);
         },
     });
 
-    return editor;
+    // FIX: kembalikan objek dengan helper — Alpine tidak perlu akses window._getFigureAlign
+    return {
+        editor,
+        getFigureAlign: () => getFigureAlign(editor),
+        getFigurePos:   () => getFigurePos(editor.state),
+        /** Bersihkan instance dari registry global + destroy editor */
+        destroy() {
+            editor.destroy();
+        },
+    };
 };
