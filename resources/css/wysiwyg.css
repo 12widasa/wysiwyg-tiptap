@@ -1,0 +1,477 @@
+/* ── Alpine cloak — sembunyikan x-show sebelum Alpine aktif ── */
+[x-cloak] {
+    display: none !important;
+}
+
+/* ── wysiwyg.css ──
+   Hanya berisi style yang TIDAK bisa di-handle Tailwind:
+   - ProseMirror internals
+   - img-figure resize behavior
+   - img-dropzone
+   - Editor content typography (prose di dalam contenteditable)
+   - Task list checkbox
+*/
+
+/* ── ProseMirror ── */
+.wysiwyg-editor .ProseMirror {
+    outline: none;
+    position: relative;
+}
+.wysiwyg-editor .ProseMirror p.is-editor-empty:first-child::before {
+    content: attr(data-placeholder);
+    color: #c0bdb7;
+    pointer-events: none;
+    position: absolute;
+}
+
+/* ── Editor Typography ── */
+.wysiwyg-editor h1 {
+    font-size: 2em;
+    font-weight: 700;
+    margin: 1.1em 0 0.3em;
+    line-height: 1.2;
+}
+.wysiwyg-editor h2 {
+    font-size: 1.55em;
+    font-weight: 700;
+    margin: 0.9em 0 0.25em;
+}
+.wysiwyg-editor h3 {
+    font-size: 1.25em;
+    font-weight: 600;
+    margin: 0.8em 0 0.2em;
+}
+.wysiwyg-editor h4 {
+    font-size: 1.08em;
+    font-weight: 600;
+    margin: 0.7em 0 0.2em;
+}
+.wysiwyg-editor h5 {
+    font-size: 0.95em;
+    font-weight: 600;
+    margin: 0.65em 0 0.2em;
+}
+.wysiwyg-editor h6 {
+    font-size: 0.9em;
+    font-weight: 600;
+    margin: 0.6em 0 0.2em;
+    color: #8a8885;
+}
+.wysiwyg-editor p {
+    margin: 0.35em 0;
+}
+.wysiwyg-editor u {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+.wysiwyg-editor s {
+    text-decoration: line-through;
+    color: #8a8885;
+}
+.wysiwyg-editor a {
+    color: #6b4fbb;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+}
+.wysiwyg-editor ul,
+.wysiwyg-editor ol {
+    padding-left: 1.5em;
+    margin: 0.3em 0;
+}
+.wysiwyg-editor li {
+    margin: 0.2em 0;
+    display: list-item;
+}
+.wysiwyg-editor ul {
+    list-style-type: disc;
+}
+.wysiwyg-editor ol {
+    list-style-type: decimal;
+}
+.wysiwyg-editor blockquote {
+    border-left: 3px solid #6b4fbb;
+    padding: 0.5em 1.2em;
+    margin: 0.7em 0;
+    background: #f0ecfa;
+    border-radius: 0 4px 4px 0;
+    color: #4a4845;
+    font-style: italic;
+}
+.wysiwyg-editor hr {
+    border: none;
+    border-top: 1.5px solid #cccac4;
+    margin: 1.4em 0;
+}
+.wysiwyg-editor img {
+    max-width: 100%;
+    border-radius: 8px;
+    margin: 0.4em 0;
+    border: 1px solid #e4e2dc;
+}
+.wysiwyg-editor mark {
+    border-radius: 2px;
+    padding: 0 2px;
+}
+
+/* ── Table ── */
+.wysiwyg-editor table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0.7em 0;
+    font-size: 14px;
+}
+.wysiwyg-editor th,
+.wysiwyg-editor td {
+    border: 1px solid #e4e2dc;
+    padding: 7px 11px;
+    text-align: left;
+}
+.wysiwyg-editor th {
+    background: #f3f2ef;
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: #8a8885;
+}
+.wysiwyg-editor tr:hover td {
+    background: #f3f2ef;
+}
+.wysiwyg-editor .selectedCell {
+    background: #f0ecfa !important;
+}
+
+/* ── Task List ── */
+.wysiwyg-editor ul[data-type="taskList"] {
+    list-style: none;
+    padding-left: 0;
+}
+.wysiwyg-editor ul[data-type="taskList"] li {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+.wysiwyg-editor ul[data-type="taskList"] li > label {
+    margin-top: 3px;
+}
+.wysiwyg-editor ul[data-type="taskList"] li > label input[type="checkbox"] {
+    cursor: pointer;
+    accent-color: #6b4fbb;
+}
+
+/* ── Image Figure ── */
+.img-figure {
+    display: inline-block;
+    position: relative;
+    margin: 0.6em 0;
+    max-width: 100%;
+    vertical-align: top;
+}
+.img-figure img {
+    display: block;
+    max-width: 100%;
+    border-radius: 8px;
+    border: 1.5px solid transparent;
+    transition: border-color 0.15s;
+    cursor: default;
+}
+.img-figure.selected img,
+.img-figure:hover img {
+    border-color: #6b4fbb;
+}
+.img-figure__img {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+.img-figure--left {
+    margin-left: 0;
+    margin-right: auto;
+    display: block;
+}
+.img-figure--center {
+    margin-left: auto;
+    margin-right: auto;
+    display: block;
+}
+.img-figure--right {
+    margin-left: auto;
+    margin-right: 0;
+    display: block;
+}
+
+/* Resize handle */
+.resize-handle {
+    position: absolute;
+    bottom: 28px;
+    right: 0;
+    width: 12px;
+    height: 12px;
+    cursor: se-resize;
+    background: #6b4fbb;
+    border-radius: 2px;
+    opacity: 0;
+    transition: opacity 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.img-figure:hover .resize-handle,
+.img-figure.selected .resize-handle {
+    opacity: 1;
+}
+.resize-handle svg {
+    width: 8px;
+    height: 8px;
+    stroke: #fff;
+    fill: none;
+    stroke-width: 2;
+    pointer-events: none;
+}
+
+/* Caption */
+.img-caption {
+    display: block;
+    width: 100%;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 12px;
+    color: #8a8885;
+    text-align: center;
+    padding: 5px 4px 2px;
+    line-height: 1.4;
+    resize: none;
+    min-height: 24px;
+}
+.img-caption::placeholder {
+    color: #c0bdb7;
+    font-style: italic;
+}
+.img-figure img[data-error] {
+    min-width: 120px;
+    min-height: 80px;
+    background: #f3f2ef;
+    border-color: #cccac4 !important;
+    opacity: 0.6;
+}
+
+/* ── Image Dropzone ── */
+.img-dropzone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    border: 1.5px dashed #cccac4;
+    border-radius: 8px;
+    padding: 32px 24px;
+    margin: 0.5em 0;
+    cursor: pointer;
+    transition:
+        border-color 0.15s,
+        background 0.15s;
+    user-select: none;
+    background: #f3f2ef;
+    position: relative;
+}
+.img-dropzone:hover,
+.img-dropzone.drag-over {
+    border-color: #6b4fbb;
+    background: #f0ecfa;
+}
+.img-dropzone input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+}
+.img-dropzone-icon {
+    width: 48px;
+    height: 56px;
+    position: relative;
+    pointer-events: none;
+}
+.img-dropzone-icon .file-body {
+    width: 40px;
+    height: 50px;
+    background: #fff;
+    border: 1.5px solid #cccac4;
+    border-radius: 6px;
+}
+.img-dropzone-icon .upload-circle {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #6b4fbb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.img-dropzone-text {
+    font-size: 13px;
+    color: #4a4845;
+    pointer-events: none;
+    text-align: center;
+}
+.img-dropzone-text strong {
+    color: #6b4fbb;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+.img-dropzone-hint {
+    font-size: 11px;
+    color: #8a8885;
+    pointer-events: none;
+}
+
+/* ── prose-content — styling untuk display konten di luar editor ── */
+.prose-content h1 {
+    font-size: 2em;
+    font-weight: 700;
+    margin: 1.1em 0 0.3em;
+    line-height: 1.2;
+}
+.prose-content h2 {
+    font-size: 1.55em;
+    font-weight: 700;
+    margin: 0.9em 0 0.25em;
+}
+.prose-content h3 {
+    font-size: 1.25em;
+    font-weight: 600;
+    margin: 0.8em 0 0.2em;
+}
+.prose-content h4 {
+    font-size: 1.08em;
+    font-weight: 600;
+    margin: 0.7em 0 0.2em;
+}
+.prose-content h5 {
+    font-size: 0.95em;
+    font-weight: 600;
+    margin: 0.65em 0 0.2em;
+}
+.prose-content h6 {
+    font-size: 0.9em;
+    font-weight: 600;
+    margin: 0.6em 0 0.2em;
+    color: #8a8885;
+}
+.prose-content p {
+    margin: 0.35em 0;
+    line-height: 1.8;
+}
+.prose-content ul {
+    list-style-type: disc;
+    padding-left: 1.5em;
+    margin: 0.3em 0;
+}
+.prose-content ol {
+    list-style-type: decimal;
+    padding-left: 1.5em;
+    margin: 0.3em 0;
+}
+.prose-content li {
+    margin: 0.2em 0;
+    display: list-item;
+    line-height: 1.8;
+}
+.prose-content ul[data-type="taskList"] {
+    list-style: none;
+    padding-left: 0;
+}
+.prose-content ul[data-type="taskList"] li {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+.prose-content ul[data-type="taskList"] li label {
+    margin-top: 3px;
+}
+.prose-content ul[data-type="taskList"] li input[type="checkbox"] {
+    accent-color: #6b4fbb;
+}
+.prose-content blockquote {
+    border-left: 3px solid #6b4fbb;
+    padding: 0.5em 1.2em;
+    margin: 0.7em 0;
+    background: #f0ecfa;
+    border-radius: 0 4px 4px 0;
+    color: #4a4845;
+    font-style: italic;
+}
+.prose-content hr {
+    border: none;
+    border-top: 1.5px solid #cccac4;
+    margin: 1.4em 0;
+}
+.prose-content a {
+    color: #6b4fbb;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+.prose-content strong {
+    font-weight: 700;
+}
+.prose-content em {
+    font-style: italic;
+}
+.prose-content u {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+.prose-content s {
+    text-decoration: line-through;
+    color: #8a8885;
+}
+.prose-content mark {
+    border-radius: 2px;
+    padding: 0 2px;
+}
+.prose-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0.7em 0;
+    font-size: 14px;
+}
+.prose-content th,
+.prose-content td {
+    border: 1px solid #e4e2dc;
+    padding: 7px 11px;
+    text-align: left;
+}
+.prose-content th {
+    background: #f3f2ef;
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: #8a8885;
+}
+.prose-content tr:hover td {
+    background: #f3f2ef;
+}
+.prose-content figure.img-figure {
+    display: block;
+    margin: 0.6em 0;
+    max-width: 100%;
+}
+.prose-content figure.img-figure img {
+    border-radius: 8px;
+    border: 1px solid #e4e2dc;
+    max-width: 100%;
+}
+.prose-content figure.img-figure figcaption {
+    font-size: 12px;
+    color: #8a8885;
+    text-align: center;
+    padding: 5px 4px 2px;
+    line-height: 1.4;
+}
