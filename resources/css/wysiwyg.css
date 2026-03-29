@@ -78,6 +78,10 @@
 .wysiwyg-prose ol         { list-style-type: decimal !important; }
 .wysiwyg-prose li         { margin: 0.2em 0; display: list-item !important; line-height: 1.8; }
 
+.wysiwyg-prose li         { margin: 0.2em 0; display: list-item !important; line-height: 1.8; }
+/* Override !important di atas — task list li harus flex, bukan list-item */
+.wysiwyg-prose ul[data-type="taskList"] li { display: flex !important; list-style: none !important; }
+
 .wysiwyg-prose blockquote {
     border-left: 3px solid var(--wy-brand);
     padding: 0.5em 1.2em;
@@ -108,12 +112,26 @@
 
 /* ── Task list ── */
 /* Tidak bisa Tailwind: attribute selector [data-type] + nested structure */
+
+/* Output (show.blade.php) */
 .wysiwyg-prose ul[data-type="taskList"]             { list-style: none; padding-left: 0; }
 .wysiwyg-prose ul[data-type="taskList"] li          { display: flex; align-items: flex-start; gap: 8px; }
 .wysiwyg-prose ul[data-type="taskList"] li > label  { margin-top: 3px; }
 .wysiwyg-prose ul[data-type="taskList"] li input[type="checkbox"] {
     cursor: pointer;
     accent-color: var(--wy-brand); /* tidak ada Tailwind utility untuk accent-color custom */
+}
+
+/* Editor aktif (Tiptap/ProseMirror) — FIX: bullet & checkbox muncul dobel
+   karena ul default masih punya list-style. Harus di-reset di sini juga.
+   Tiptap v3: ul[data-type="taskList"] > li[data-type="taskItem"] > label + div */
+.wysiwyg-editor .ProseMirror ul[data-type="taskList"]                          { list-style: none; padding-left: 0; }
+.wysiwyg-editor .ProseMirror ul[data-type="taskList"] li[data-type="taskItem"] { display: flex; align-items: flex-start; gap: 8px; list-style: none; }
+.wysiwyg-editor .ProseMirror ul[data-type="taskList"] li[data-type="taskItem"] > label { margin-top: 3px; cursor: pointer; display: flex; align-items: center; }
+.wysiwyg-editor .ProseMirror ul[data-type="taskList"] li[data-type="taskItem"] > div   { flex: 1; min-width: 0; }
+.wysiwyg-editor .ProseMirror ul[data-type="taskList"] li[data-type="taskItem"] input[type="checkbox"] {
+    cursor: pointer;
+    accent-color: var(--wy-brand);
 }
 
 /* ── Figure display (prose-content / output) ── */
