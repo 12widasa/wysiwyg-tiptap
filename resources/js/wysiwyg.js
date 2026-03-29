@@ -144,11 +144,16 @@ async function uploadImage(file, uploadUrl, signal) {
     });
 
     if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
+        const contentType = res.headers.get('content-type') ?? '';
+        const err = contentType.includes('application/json')
+            ? await res.json().catch(() => ({}))
+            : {};
         throw new Error(err.message || `Upload gagal (HTTP ${res.status})`);
     }
 
-    const data = await res.json();
+    const data = await res.json().catch(() => {
+        throw new Error('Response upload tidak valid (bukan JSON)');
+    });
     if (typeof data?.url !== "string" || !data.url.startsWith("http"))
         throw new Error("Response upload tidak valid");
 
@@ -708,3 +713,4 @@ window.initWysiwyg = function ({
         },
     };
 };
+

@@ -13,14 +13,23 @@
 
 /* ── CSS custom properties (design tokens) ────────────────────────────────── */
 :root {
-    --wy-brand:        #6b4fbb;
-    --wy-brand-light:  #f0ecfa;
+    --wy-brand:        #1447E6;
+    --wy-brand-light:  #e8eefb;
     --wy-border:       #e4e2dc;
     --wy-border-muted: #cccac4;
     --wy-bg-subtle:    #f3f2ef;
     --wy-text-muted:   #8a8885;
     --wy-text-body:    #4a4845;
     --wy-placeholder:  #c0bdb7;
+}
+
+/* ── Toolbar keyboard focus indicator ─────────────────────────────────────── */
+/* Tambahkan focus ring via CSS agar tidak perlu tambah class di tiap button */
+[role="toolbar"] button:focus-visible,
+[role="toolbar"] [role="button"]:focus-visible {
+    outline: 2px solid var(--wy-brand);
+    outline-offset: 1px;
+    border-radius: 4px;
 }
 
 /* ── ProseMirror internals ─────────────────────────────────────────────────── */
@@ -76,8 +85,6 @@
 .wysiwyg-prose ol         { padding-left: 1.5em; margin: 0.3em 0; }
 .wysiwyg-prose ul         { list-style-type: disc !important; }
 .wysiwyg-prose ol         { list-style-type: decimal !important; }
-.wysiwyg-prose li         { margin: 0.2em 0; display: list-item !important; line-height: 1.8; }
-
 .wysiwyg-prose li         { margin: 0.2em 0; display: list-item !important; line-height: 1.8; }
 /* Override !important di atas — task list li harus flex, bukan list-item */
 .wysiwyg-prose ul[data-type="taskList"] li { display: flex !important; list-style: none !important; }
@@ -147,6 +154,7 @@
     margin: 0.6em 0;
     max-width: 100%;
     vertical-align: top;
+    overflow: hidden;
 }
 .img-figure img {
     display: block;
@@ -169,18 +177,19 @@
 /* ── Resize handle ── */
 .resize-handle {
     position: absolute;
-    bottom: 28px;
-    right: 0;
-    width: 12px;
-    height: 12px;
+    bottom: 4px;
+    right: 4px;
+    width: 14px;
+    height: 14px;
     cursor: se-resize;
     background: var(--wy-brand);
-    border-radius: 2px;
+    border-radius: 3px;
     opacity: 0;
     transition: opacity 0.15s;
     display: flex;
     align-items: center;
     justify-content: center;
+    z-index: 1;
 }
 .img-figure:hover .resize-handle,
 .img-figure.selected .resize-handle { opacity: 1; }

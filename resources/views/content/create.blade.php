@@ -31,10 +31,10 @@
 
             {{-- Submit area --}}
             <div class="mt-4 flex items-center justify-end gap-3">
-                <button type="submit"
-                    :disabled="submitting"
-                    :class="submitting ? 'opacity-60 cursor-not-allowed' : ''"
-                    class="px-5 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold rounded-lg transition">
+                <button type="submit" :disabled="submitting || !editorHtml.replace(/<[^>]*>/g, '').trim()"
+                    :class="(submitting || !editorHtml.replace(/<[^>]*>/g, '').trim()) ? 'opacity-50 cursor-not-allowed' :
+                    'hover:bg-brand-dark'"
+                    class="px-5 py-2 bg-brand text-white text-sm font-semibold rounded-lg transition">
                     <span x-show="!submitting">Simpan Konten</span>
                     <span x-show="submitting">Menyimpan...</span>
                 </button>

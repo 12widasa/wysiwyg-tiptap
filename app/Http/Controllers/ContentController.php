@@ -2,30 +2,36 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreContentRequest;
 use App\Models\Content;
-use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use HTMLPurifier;
-use HTMLPurifier_Config;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class ContentController extends Controller
 {
+    public function __construct(private readonly HTMLPurifier $purifier) {}
+
     public function create()
     {
         return view('content.create');
     }
 
-    public function store(Request $request)
+    public function store(StoreContentRequest $request)
     {
-        $request->validate([
-            'description' => ['required', 'string', 'max:500000'],
-        ]);
+        try {
+            $clean   = $this->purifier->purify($request->input('description'));
+            $content = Content::create(['description' => $clean]);
 
-        $clean = $this->sanitize($request->input('description'));
+            return redirect()->route('content.show', $content->id);
+        } catch (\Throwable $e) {
+            Log::error('ContentController::store failed', ['error' => $e->getMessage()]);
 
-        $content = Content::create(['description' => $clean]);
-
-        return redirect()->route('content.show', $content->id);
+            return back()
+                ->withInput()
+                ->withErrors(['description' => 'Gagal menyimpan konten. Silakan coba lagi.']);
+        }
     }
 
     public function show(Content $content)
@@ -45,83 +51,23 @@ class ContentController extends Controller
             ],
         ]);
 
-        $ext      = strtolower($request->file('image')->getClientOriginalExtension());
-        $filename = Str::uuid() . '.' . $ext;
-        $path     = $request->file('image')->storeAs('content-images', $filename, 'public');
+        try {
+            $ext      = strtolower($request->file('image')->getClientOriginalExtension());
+            $filename = Str::uuid() . '.' . $ext;
+            $path     = $request->file('image')->storeAs('content-images', $filename, 'public');
 
-        return response()->json([
-            'url' => asset('storage/' . $path),
-        ]);
-    }
+            if (! $path) {
+                throw new \RuntimeException('File gagal disimpan ke storage.');
+            }
 
-    // ── HTML Sanitizer ────────────────────────────────────────────────────────
-    // HTMLPurifier tidak support figure/figcaption via config saja —
-    // elemen HTML5 harus didefinisikan manual via HTMLPurifier_HTMLDefinition.
-    // Ini cara resmi yang direkomendasikan di dokumentasi HTMLPurifier.
-    private function sanitize(string $dirty): string
-    {
-        $config = HTMLPurifier_Config::createDefault();
+            return response()->json(['url' => asset('storage/' . $path)]);
+        } catch (\Throwable $e) {
+            Log::error('ContentController::uploadImage failed', ['error' => $e->getMessage()]);
 
-        // HTML5 doctype — wajib agar figure, figcaption, input[type=checkbox] dikenali
-        $config->set('HTML.Doctype', 'HTML 4.01 Transitional');
-        $config->set('HTML.Allowed', implode(',', [
-            'p',
-            'br',
-            'strong',
-            'em',
-            'u',
-            's',
-            'h1',
-            'h2',
-            'h3',
-            'h4',
-            'h5',
-            'h6',
-            'ul[data-type]',
-            'ol',
-            'li',
-            'blockquote',
-            'a[href|target|rel]',
-            'img[src|alt|width|style|class]',
-            'figure[class]',
-            'figcaption[class]',
-            'table',
-            'thead',
-            'tbody',
-            'tr',
-            'th[scope|style]',
-            'td[colspan|rowspan|style]',
-            'hr',
-            'span[style]',
-        ]));
-        $config->set('CSS.AllowedProperties',    'margin-left,text-align,background-color,color,font-size,width,max-width');
-        $config->set('AutoFormat.AutoParagraph', false);
-        $config->set('AutoFormat.RemoveEmpty',   false);
-        $config->set('Core.EscapeInvalidTags',   true);
-        $config->set('URI.AllowedSchemes',       ['http' => true, 'https' => true, 'mailto' => true]);
-        $config->set('Cache.SerializerPath',     storage_path('app/purifier'));
-
-        // ── Daftarkan figure & figcaption sebagai elemen HTML5 custom ──
-        // Ini satu-satunya cara yang didukung HTMLPurifier untuk elemen
-        // yang tidak ada di HTML 4.01 (figure, figcaption, article, dll.)
-        $config->set('HTML.DefinitionID',  'wysiwyg-tiptap');
-        $config->set('HTML.DefinitionRev', 3);
-
-        if ($def = $config->maybeGetRawHTMLDefinition()) {
-            // figure & figcaption — tidak ada di HTML 4.01, harus didaftarkan manual
-            $def->addElement('figure',     'Block', 'Optional: (figcaption, Flow) | (Flow, figcaption?) | Flow', 'Common', ['class' => 'CDATA']);
-            $def->addElement('figcaption', 'Block', 'Flow', 'Common', ['class' => 'CDATA']);
-
-            // input[checkbox] untuk task list (readonly di output, hanya display)
-            $def->addAttribute('ul', 'data-type', 'CDATA');
-            $def->addElement('input', 'Inline', 'Empty', 'Common', [
-                'type'     => 'Enum#checkbox',
-                'checked'  => 'Bool#checked',
-                'disabled' => 'Bool#disabled',
-            ]);
+            return response()->json(
+                ['message' => 'Upload gagal. Periksa kapasitas storage atau coba lagi.'],
+                500
+            );
         }
-
-        $purifier = new HTMLPurifier($config);
-        return $purifier->purify($dirty);
     }
 }

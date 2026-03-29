@@ -11,4 +11,10 @@
         "Instrument Sans", ui-sans-serif, system-ui, sans-serif,
         "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
         "Noto Color Emoji";
+
+    /* Brand colors — sinkron dengan --wy-brand di wysiwyg.css */
+    --color-brand:          #1447E6;
+    --color-brand-dark:     #0f39c4;
+    --color-brand-light:    #e8eefb;
+    --color-brand-subtle:   #f0f4fd;
 }

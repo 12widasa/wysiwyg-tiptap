@@ -14,36 +14,36 @@
         <div x-show="open" x-cloak x-transition
             class="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[156px] p-1">
             <button type="button" @click="cmd('setParagraph'); open=false"
-                :class="isActive('paragraph') && 'bg-violet-50 text-violet-700'"
+                :class="isActive('paragraph') && 'bg-brand-light text-brand'"
                 class="dd-item w-full flex items-center gap-2 px-2.5 py-1.5 text-sm text-gray-700 hover:bg-gray-100 rounded transition-colors">Paragraph</button>
             <div class="h-px bg-gray-100 my-1"></div>
             <button type="button" @click="cmd('toggleHeading',{level:1}); open=false"
-                :class="isActive('heading', { level: 1 }) && 'bg-violet-50 text-violet-700'"
+                :class="isActive('heading', { level: 1 }) && 'bg-brand-light text-brand'"
                 class="w-full flex items-center gap-2 px-2.5 py-1.5 hover:bg-gray-100 rounded transition-colors text-left font-bold text-[17px]">Heading
                 1</button>
             <button type="button" @click="cmd('toggleHeading',{level:2}); open=false"
-                :class="isActive('heading', { level: 2 }) && 'bg-violet-50 text-violet-700'"
+                :class="isActive('heading', { level: 2 }) && 'bg-brand-light text-brand'"
                 class="w-full flex items-center gap-2 px-2.5 py-1.5 hover:bg-gray-100 rounded transition-colors text-left font-bold text-[15px]">Heading
                 2</button>
             <button type="button" @click="cmd('toggleHeading',{level:3}); open=false"
-                :class="isActive('heading', { level: 3 }) && 'bg-violet-50 text-violet-700'"
+                :class="isActive('heading', { level: 3 }) && 'bg-brand-light text-brand'"
                 class="w-full flex items-center gap-2 px-2.5 py-1.5 hover:bg-gray-100 rounded transition-colors text-left font-semibold text-[13px]">Heading
                 3</button>
             <button type="button" @click="cmd('toggleHeading',{level:4}); open=false"
-                :class="isActive('heading', { level: 4 }) && 'bg-violet-50 text-violet-700'"
+                :class="isActive('heading', { level: 4 }) && 'bg-brand-light text-brand'"
                 class="w-full flex items-center gap-2 px-2.5 py-1.5 hover:bg-gray-100 rounded transition-colors text-left font-semibold text-[12px]">Heading
                 4</button>
             <button type="button" @click="cmd('toggleHeading',{level:5}); open=false"
-                :class="isActive('heading', { level: 5 }) && 'bg-violet-50 text-violet-700'"
+                :class="isActive('heading', { level: 5 }) && 'bg-brand-light text-brand'"
                 class="w-full flex items-center gap-2 px-2.5 py-1.5 hover:bg-gray-100 rounded transition-colors text-left font-semibold text-[11px]">Heading
                 5</button>
             <button type="button" @click="cmd('toggleHeading',{level:6}); open=false"
-                :class="isActive('heading', { level: 6 }) && 'bg-violet-50 text-violet-700'"
+                :class="isActive('heading', { level: 6 }) && 'bg-brand-light text-brand'"
                 class="w-full flex items-center gap-2 px-2.5 py-1.5 hover:bg-gray-100 rounded transition-colors text-left font-semibold text-[11px] text-gray-400">Heading
                 6</button>
             <div class="h-px bg-gray-100 my-1"></div>
             <button type="button" @click="cmd('toggleBlockquote'); open=false"
-                :class="isActive('blockquote') && 'bg-violet-50 text-violet-700'"
+                :class="isActive('blockquote') && 'bg-brand-light text-brand'"
                 class="w-full flex items-center gap-2 px-2.5 py-1.5 text-sm text-gray-700 hover:bg-gray-100 rounded transition-colors text-left">
                 <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -71,7 +71,7 @@
             class="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[80px] p-1">
             <template x-for="size in [12,13,14,15,16,18,20,24,28,32,36]" :key="size">
                 <button type="button" @click="setFontSize(size); open=false"
-                    :class="fontSize === size + 'px' && 'bg-violet-50 text-violet-700'"
+                    :class="fontSize === size + 'px' && 'bg-brand-light text-brand'"
                     class="w-full flex items-center px-2.5 py-1.5 font-mono text-xs text-gray-700 hover:bg-gray-100 rounded transition-colors"
                     x-text="size+'px'"></button>
             </template>
@@ -81,8 +81,8 @@
     <div class="w-px h-[18px] bg-gray-300 mx-1 shrink-0"></div>
 
     {{-- Bold, Italic, Underline, Strike --}}
-    <button type="button" @click="cmd('toggleBold')" :class="isActive('bold') && 'bg-violet-50 text-violet-700'"
-        title="Bold" aria-pressed="false"
+    <button type="button" @click="cmd('toggleBold')" :class="isActive('bold') && 'bg-brand-light text-brand'"
+        title="Bold" :aria-pressed="isActive('bold').toString()"
         class="flex items-center justify-center w-[30px] h-[30px] rounded text-gray-600 hover:bg-gray-100 transition-colors shrink-0">
         <svg class="w-[15px] h-[15px] pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor"
             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -90,8 +90,8 @@
             <path d="M15 20a4 4 0 0 0 0-8H6v8Z" />
         </svg>
     </button>
-    <button type="button" @click="cmd('toggleItalic')" :class="isActive('italic') && 'bg-violet-50 text-violet-700'"
-        title="Italic" aria-pressed="false"
+    <button type="button" @click="cmd('toggleItalic')" :class="isActive('italic') && 'bg-brand-light text-brand'"
+        title="Italic" :aria-pressed="isActive('italic').toString()"
         class="flex items-center justify-center w-[30px] h-[30px] rounded text-gray-600 hover:bg-gray-100 transition-colors shrink-0">
         <svg class="w-[15px] h-[15px] pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor"
             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -101,7 +101,8 @@
         </svg>
     </button>
     <button type="button" @click="cmd('toggleUnderline')"
-        :class="isActive('underline') && 'bg-violet-50 text-violet-700'" title="Underline" aria-pressed="false"
+        :class="isActive('underline') && 'bg-brand-light text-brand'" title="Underline"
+        :aria-pressed="isActive('underline').toString()"
         class="flex items-center justify-center w-[30px] h-[30px] rounded text-gray-600 hover:bg-gray-100 transition-colors shrink-0">
         <svg class="w-[15px] h-[15px] pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor"
             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -109,8 +110,8 @@
             <line x1="4" y1="20" x2="20" y2="20" />
         </svg>
     </button>
-    <button type="button" @click="cmd('toggleStrike')" :class="isActive('strike') && 'bg-violet-50 text-violet-700'"
-        title="Strikethrough" aria-pressed="false"
+    <button type="button" @click="cmd('toggleStrike')" :class="isActive('strike') && 'bg-brand-light text-brand'"
+        title="Strikethrough" :aria-pressed="isActive('strike').toString()"
         class="flex items-center justify-center w-[30px] h-[30px] rounded text-gray-600 hover:bg-gray-100 transition-colors shrink-0">
         <svg class="w-[15px] h-[15px] pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor"
             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -216,7 +217,8 @@
 
     {{-- Lists --}}
     <button type="button" @click="cmd('toggleBulletList')"
-        :class="isActive('bulletList') && 'bg-violet-50 text-violet-700'" title="Bullet List" aria-pressed="false"
+        :class="isActive('bulletList') && 'bg-brand-light text-brand'" title="Bullet List"
+        :aria-pressed="isActive('bulletList').toString()"
         class="flex items-center justify-center w-[30px] h-[30px] rounded text-gray-600 hover:bg-gray-100 transition-colors shrink-0">
         <svg class="w-[15px] h-[15px] pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor"
             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -229,7 +231,8 @@
         </svg>
     </button>
     <button type="button" @click="cmd('toggleOrderedList')"
-        :class="isActive('orderedList') && 'bg-violet-50 text-violet-700'" title="Ordered List" aria-pressed="false"
+        :class="isActive('orderedList') && 'bg-brand-light text-brand'" title="Ordered List"
+        :aria-pressed="isActive('orderedList').toString()"
         class="flex items-center justify-center w-[30px] h-[30px] rounded text-gray-600 hover:bg-gray-100 transition-colors shrink-0">
         <svg class="w-[15px] h-[15px] pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor"
             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -242,7 +245,8 @@
         </svg>
     </button>
     <button type="button" @click="cmd('toggleTaskList')"
-        :class="isActive('taskList') && 'bg-violet-50 text-violet-700'" title="Task List" aria-pressed="false"
+        :class="isActive('taskList') && 'bg-brand-light text-brand'" title="Task List"
+        :aria-pressed="isActive('taskList').toString()"
         class="flex items-center justify-center w-[30px] h-[30px] rounded text-gray-600 hover:bg-gray-100 transition-colors shrink-0">
         <svg class="w-[15px] h-[15px] pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor"
             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -256,8 +260,8 @@
     <div class="w-px h-[18px] bg-gray-300 mx-1 shrink-0"></div>
 
     {{-- Align --}}
-    <button type="button" @click="setAlign('left')" :class="alignActive('left') && 'bg-violet-50 text-violet-700'"
-        title="Align Left" aria-pressed="false"
+    <button type="button" @click="setAlign('left')" :class="alignActive('left') && 'bg-brand-light text-brand'"
+        title="Align Left" :aria-pressed="alignActive('left').toString()"
         class="flex items-center justify-center w-[30px] h-[30px] rounded text-gray-600 hover:bg-gray-100 transition-colors shrink-0">
         <svg class="w-[15px] h-[15px] pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor"
             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -266,8 +270,8 @@
             <line x1="17" y1="18" x2="3" y2="18" />
         </svg>
     </button>
-    <button type="button" @click="setAlign('center')"
-        :class="alignActive('center') && 'bg-violet-50 text-violet-700'" title="Align Center" aria-pressed="false"
+    <button type="button" @click="setAlign('center')" :class="alignActive('center') && 'bg-brand-light text-brand'"
+        title="Align Center" :aria-pressed="alignActive('center').toString()"
         class="flex items-center justify-center w-[30px] h-[30px] rounded text-gray-600 hover:bg-gray-100 transition-colors shrink-0">
         <svg class="w-[15px] h-[15px] pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor"
             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -276,8 +280,8 @@
             <line x1="19" y1="18" x2="5" y2="18" />
         </svg>
     </button>
-    <button type="button" @click="setAlign('right')" :class="alignActive('right') && 'bg-violet-50 text-violet-700'"
-        title="Align Right" aria-pressed="false"
+    <button type="button" @click="setAlign('right')" :class="alignActive('right') && 'bg-brand-light text-brand'"
+        title="Align Right" :aria-pressed="alignActive('right').toString()"
         class="flex items-center justify-center w-[30px] h-[30px] rounded text-gray-600 hover:bg-gray-100 transition-colors shrink-0">
         <svg class="w-[15px] h-[15px] pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor"
             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -287,7 +291,8 @@
         </svg>
     </button>
     <button type="button" @click="setAlign('justify')"
-        :class="alignActive('justify') && 'bg-violet-50 text-violet-700'" title="Justify" aria-pressed="false"
+        :class="alignActive('justify') && 'bg-brand-light text-brand'" title="Justify"
+        :aria-pressed="alignActive('justify').toString()"
         class="flex items-center justify-center w-[30px] h-[30px] rounded text-gray-600 hover:bg-gray-100 transition-colors shrink-0">
         <svg class="w-[15px] h-[15px] pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor"
             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -324,7 +329,7 @@
     {{-- Insert --}}
     <div class="relative ml-auto" x-data="{ open: false }" @click.outside="open = false">
         <button type="button" @click="open = !open" :aria-expanded="open"
-            class="flex items-center gap-1.5 h-[30px] px-3 bg-violet-600 hover:bg-violet-700 text-white rounded text-xs font-semibold transition-colors">
+            class="flex items-center gap-1.5 h-[30px] px-3 bg-brand hover:bg-brand-dark text-white rounded text-xs font-semibold transition-colors">
             <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
                 stroke-linecap="round" stroke-linejoin="round">
                 <line x1="12" y1="5" x2="12" y2="19" />
