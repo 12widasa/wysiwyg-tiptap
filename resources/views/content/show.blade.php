@@ -13,6 +13,13 @@
 
         <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-8">
             <div class="prose-content wysiwyg-prose">
+                {{--
+        SAFE — {!! !!} digunakan secara sengaja di sini.
+        $content->description sudah disanitasi via HTMLPurifier
+        di ContentController::sanitize() sebelum disimpan ke database.
+        JANGAN ganti ke {{ }} karena akan meng-escape tag HTML yang valid.
+        JANGAN tampilkan kolom HTML lain di sini tanpa melewati sanitize() terlebih dahulu.
+    --}}
                 {!! $content->description !!}
             </div>
         </div>

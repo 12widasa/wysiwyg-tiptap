@@ -1,9 +1,15 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "laravel/laravel",
+    "name": "12widasa/wysiwyg-tiptap",
     "type": "project",
-    "description": "The skeleton application for the Laravel framework.",
-    "keywords": ["laravel", "framework"],
+    "description": "WYSIWYG rich text editor component built with Tiptap, Alpine.js, and Laravel.",
+    "keywords": [
+        "laravel",
+        "tiptap",
+        "wysiwyg",
+        "editor",
+        "alpinejs"
+    ],
     "license": "MIT",
     "require": {
         "php": "^8.2",

@@ -18,29 +18,29 @@ import { TextSelection } from "prosemirror-state";
 
 // ── Constants ──────────────────────────────────────────────────────────────
 const NODE_NAMES = Object.freeze({
-    IMAGE_FIGURE:   "imageFigure",
+    IMAGE_FIGURE: "imageFigure",
     IMAGE_DROPZONE: "imageDropzone",
-    PARAGRAPH:      "paragraph",
-    HEADING:        "heading",
-    BLOCKQUOTE:     "blockquote",
-    BULLET_LIST:    "bulletList",
-    ORDERED_LIST:   "orderedList",
-    TASK_LIST:      "taskList",
-    LIST_ITEM:      "listItem",
-    TASK_ITEM:      "taskItem",
+    PARAGRAPH: "paragraph",
+    HEADING: "heading",
+    BLOCKQUOTE: "blockquote",
+    BULLET_LIST: "bulletList",
+    ORDERED_LIST: "orderedList",
+    TASK_LIST: "taskList",
+    LIST_ITEM: "listItem",
+    TASK_ITEM: "taskItem",
 });
 
 const ALIGN = Object.freeze({
-    LEFT:    "left",
-    CENTER:  "center",
-    RIGHT:   "right",
+    LEFT: "left",
+    CENTER: "center",
+    RIGHT: "right",
     JUSTIFY: "justify",
 });
 
-const FILE_MAX_BYTES  = 5 * 1024 * 1024;   // 5 MB
-const RESIZE_MIN_PX   = 80;
-const INDENT_STEP     = 24;
-const INDENT_MAX      = 8;
+const FILE_MAX_BYTES = 5 * 1024 * 1024;   // 5 MB
+const RESIZE_MIN_PX = 80;
+const INDENT_STEP = 24;
+const INDENT_MAX = 8;
 const TOOLBAR_DEBOUNCE_MS = 60;            // debounce _syncToolbar
 
 const INDENTABLE = Object.freeze([
@@ -118,7 +118,7 @@ function getFigureAlign(editor) {
 // initWysiwyg yang mengembalikan editor instance, Alpine memanggil metode
 // helper via wrapper yang kita berikan di bawah.
 window._sanitizeUrl = sanitizeUrl;
-window._escapeHtml   = escapeHtml;
+window._escapeHtml = escapeHtml;
 
 // ── Upload gambar ke server ────────────────────────────────────────────────
 
@@ -137,9 +137,9 @@ async function uploadImage(file, uploadUrl, signal) {
     formData.append("image", file);
 
     const res = await fetch(uploadUrl, {
-        method:  "POST",
+        method: "POST",
         headers: { "X-CSRF-TOKEN": csrfToken },
-        body:    formData,
+        body: formData,
         signal,                 // AbortSignal untuk cancel
     });
 
@@ -152,25 +152,101 @@ async function uploadImage(file, uploadUrl, signal) {
     if (typeof data?.url !== "string" || !data.url.startsWith("http"))
         throw new Error("Response upload tidak valid");
 
+    const returnedOrigin = new URL(data.url).origin;
+    if (returnedOrigin !== window.location.origin)
+        throw new Error("Response upload tidak valid: origin tidak dikenali");
+
     return data.url;
+}
+
+// ── ImageFigure: caption keydown handler ──────────────────────────────────
+function handleCaptionKeydown(e, { caption, ed, getPos }) {
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+
+    const { state } = ed;
+    const { tr } = state;
+
+    if (e.key === "Backspace" || e.key === "Delete") {
+        e.preventDefault();
+        const start = caption.selectionStart;
+        const end = caption.selectionEnd;
+        const val = caption.value;
+
+        if (e.key === "Backspace" && val.trim() === "") {
+            caption.blur();
+            const pos = getPos();
+            if (typeof pos !== "number") return;
+            try {
+                const $pos = tr.doc.resolve(pos);
+                tr.setSelection(TextSelection.near($pos));
+                ed.view.dispatch(tr);
+            } catch { /* best effort */ }
+            ed.view.focus();
+            return;
+        }
+
+        if (e.key === "Backspace") {
+            caption.value = start !== end
+                ? val.slice(0, start) + val.slice(end)
+                : start > 0 ? val.slice(0, start - 1) + val.slice(start) : val;
+            caption.selectionStart = caption.selectionEnd = start !== end ? start : Math.max(0, start - 1);
+        } else {
+            caption.value = start !== end
+                ? val.slice(0, start) + val.slice(end)
+                : start < val.length ? val.slice(0, start) + val.slice(start + 1) : val;
+            caption.selectionStart = caption.selectionEnd = start;
+        }
+        caption.dispatchEvent(new Event("input"));
+        return;
+    }
+
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+
+    const pos = getPos();
+    if (typeof pos !== "number") return;
+    caption.blur();
+
+    const figureNode = state.doc.nodeAt(pos);
+    if (!figureNode) return;
+
+    const afterPos = pos + figureNode.nodeSize;
+    const nextNode = afterPos < state.doc.content.size ? state.doc.nodeAt(afterPos) : null;
+
+    if (nextNode?.isBlock) {
+        try {
+            const $pos = tr.doc.resolve(afterPos);
+            tr.setSelection(TextSelection.near($pos));
+            ed.view.dispatch(tr);
+        } catch { /* best effort */ }
+    } else {
+        tr.insert(afterPos, state.schema.nodes[NODE_NAMES.PARAGRAPH].create());
+        try {
+            const $pos = tr.doc.resolve(afterPos);
+            tr.setSelection(TextSelection.near($pos));
+        } catch { /* fallback */ }
+        ed.view.dispatch(tr);
+    }
+    ed.view.focus();
 }
 
 // ── ImageFigure Node ───────────────────────────────────────────────────────
 const ImageFigureNode = Node.create({
-    name:       NODE_NAMES.IMAGE_FIGURE,
-    group:      "block",
-    atom:       false,
-    isolating:  true,
+    name: NODE_NAMES.IMAGE_FIGURE,
+    group: "block",
+    atom: false,
+    isolating: true,
     selectable: true,
-    draggable:  true,
+    draggable: true,
 
     addAttributes() {
         return {
-            src:     { default: null },
-            alt:     { default: "" },
-            width:   { default: null },
+            src: { default: null },
+            alt: { default: "" },
+            width: { default: null },
             caption: { default: "" },
-            align:   { default: ALIGN.LEFT },
+            align: { default: ALIGN.LEFT },
         };
     },
 
@@ -180,15 +256,15 @@ const ImageFigureNode = Node.create({
 
     renderHTML({ HTMLAttributes }) {
         const alignClass = {
-            left:    "img-figure--left",
-            center:  "img-figure--center",
-            right:   "img-figure--right",
+            left: "img-figure--left",
+            center: "img-figure--center",
+            right: "img-figure--right",
             justify: "img-figure--left",
         }[HTMLAttributes.align || "left"] ?? "img-figure--left";
 
         const imgAttrs = {
-            src:   HTMLAttributes.src || "",
-            alt:   HTMLAttributes.alt || "",
+            src: HTMLAttributes.src || "",
+            alt: HTMLAttributes.alt || "",
             style: HTMLAttributes.width
                 ? `width:${HTMLAttributes.width}px;max-width:100%`
                 : "max-width:100%",
@@ -203,12 +279,12 @@ const ImageFigureNode = Node.create({
         return [
             "figure",
             {
-                "data-type":    NODE_NAMES.IMAGE_FIGURE,
-                "data-src":     HTMLAttributes.src,
-                "data-alt":     HTMLAttributes.alt,
-                "data-width":   HTMLAttributes.width,
+                "data-type": NODE_NAMES.IMAGE_FIGURE,
+                "data-src": HTMLAttributes.src,
+                "data-alt": HTMLAttributes.alt,
+                "data-width": HTMLAttributes.width,
                 "data-caption": HTMLAttributes.caption,
-                "data-align":   HTMLAttributes.align,
+                "data-align": HTMLAttributes.align,
                 class: `img-figure ${alignClass}`,
             },
             ...children,
@@ -219,7 +295,7 @@ const ImageFigureNode = Node.create({
         return ({ node, editor: ed, getPos }) => {
             // ── DOM setup ──
             const wrap = document.createElement("div");
-            wrap.className      = "img-figure";
+            wrap.className = "img-figure";
             wrap.contentEditable = "false";
             if (node.attrs.width) wrap.style.width = node.attrs.width + "px";
 
@@ -235,7 +311,7 @@ const ImageFigureNode = Node.create({
             // src set terakhir agar onload/onerror sudah terpasang
             img.onload = () => {
                 if (!node.attrs.width) {
-                    wrap.style.width    = img.naturalWidth + "px";
+                    wrap.style.width = img.naturalWidth + "px";
                     wrap.style.maxWidth = "100%";
                 }
                 img.removeAttribute("data-error");
@@ -248,15 +324,15 @@ const ImageFigureNode = Node.create({
 
             const handle = document.createElement("div");
             handle.className = "resize-handle";
-            handle.title     = "Drag to resize";
+            handle.title = "Drag to resize";
             handle.setAttribute("aria-hidden", "true");
             handle.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>`;
 
             const caption = document.createElement("textarea");
-            caption.className   = "img-caption";
+            caption.className = "img-caption";
             caption.placeholder = "Add a caption…";
-            caption.rows        = 1;
-            caption.value       = node.attrs.caption || "";
+            caption.rows = 1;
+            caption.value = node.attrs.caption || "";
             caption.setAttribute("aria-label", "Image caption");
 
             wrap.appendChild(img);
@@ -298,81 +374,11 @@ const ImageFigureNode = Node.create({
 
             // ── Caption events ──
             caption.addEventListener("mousedown", (e) => e.stopPropagation());
-            caption.addEventListener("click",     (e) => e.stopPropagation());
-            caption.addEventListener("keyup",     (e) => e.stopPropagation());
-            caption.addEventListener("keypress",  (e) => e.stopPropagation());
+            caption.addEventListener("click", (e) => e.stopPropagation());
+            caption.addEventListener("keyup", (e) => e.stopPropagation());
+            caption.addEventListener("keypress", (e) => e.stopPropagation());
 
-            caption.addEventListener("keydown", (e) => {
-                e.stopPropagation();
-                e.stopImmediatePropagation();
-
-                const { state } = ed;
-                const { tr }    = state;
-
-                if (e.key === "Backspace" || e.key === "Delete") {
-                    e.preventDefault();
-                    const start = caption.selectionStart;
-                    const end   = caption.selectionEnd;
-                    const val   = caption.value;
-
-                    // Backspace pada caption kosong → fokus ke editor
-                    if (e.key === "Backspace" && val.trim() === "") {
-                        caption.blur();
-                        const pos = getPos();
-                        if (typeof pos !== "number") return;
-                        try {
-                            const $pos = tr.doc.resolve(pos);
-                            tr.setSelection(TextSelection.near($pos));
-                            ed.view.dispatch(tr);
-                        } catch { /* best effort */ }
-                        ed.view.focus();
-                        return;
-                    }
-
-                    if (e.key === "Backspace") {
-                        caption.value = start !== end
-                            ? val.slice(0, start) + val.slice(end)
-                            : start > 0 ? val.slice(0, start - 1) + val.slice(start) : val;
-                        caption.selectionStart = caption.selectionEnd = start !== end ? start : Math.max(0, start - 1);
-                    } else {
-                        caption.value = start !== end
-                            ? val.slice(0, start) + val.slice(end)
-                            : start < val.length ? val.slice(0, start) + val.slice(start + 1) : val;
-                        caption.selectionStart = caption.selectionEnd = start;
-                    }
-                    caption.dispatchEvent(new Event("input"));
-                    return;
-                }
-
-                if (e.key !== "Enter") return;
-                e.preventDefault();
-
-                const pos = getPos();
-                if (typeof pos !== "number") return;
-                caption.blur();
-
-                const figureNode = state.doc.nodeAt(pos);
-                if (!figureNode) return;
-
-                const afterPos = pos + figureNode.nodeSize;
-                const nextNode = afterPos < state.doc.content.size ? state.doc.nodeAt(afterPos) : null;
-
-                if (nextNode?.isBlock) {
-                    try {
-                        const $pos = tr.doc.resolve(afterPos);
-                        tr.setSelection(TextSelection.near($pos));
-                        ed.view.dispatch(tr);
-                    } catch { /* best effort */ }
-                } else {
-                    tr.insert(afterPos, state.schema.nodes[NODE_NAMES.PARAGRAPH].create());
-                    try {
-                        const $pos = tr.doc.resolve(afterPos);
-                        tr.setSelection(TextSelection.near($pos));
-                    } catch { /* fallback */ }
-                    ed.view.dispatch(tr);
-                }
-                ed.view.focus();
-            });
+            caption.addEventListener("keydown", (e) => handleCaptionKeydown(e, { caption, ed, getPos }));
 
             caption.addEventListener("input", () => {
                 caption.style.height = "auto";
@@ -428,11 +434,11 @@ const ImageFigureNode = Node.create({
 
 // ── ImageDropzone Node ─────────────────────────────────────────────────────
 const ImageDropzoneNode = Node.create({
-    name:       NODE_NAMES.IMAGE_DROPZONE,
-    group:      "block",
-    atom:       true,
+    name: NODE_NAMES.IMAGE_DROPZONE,
+    group: "block",
+    atom: true,
     selectable: true,
-    draggable:  false,
+    draggable: false,
 
     parseHTML() {
         return [{ tag: `div[data-type="${NODE_NAMES.IMAGE_DROPZONE}"]` }];
@@ -446,8 +452,8 @@ const ImageDropzoneNode = Node.create({
             const uploadUrl = ed.options.element.dataset.uploadUrl || "/content/upload-image";
 
             const dom = document.createElement("div");
-            dom.className        = "img-dropzone";
-            dom.contentEditable  = "false";
+            dom.className = "img-dropzone";
+            dom.contentEditable = "false";
             dom.setAttribute("role", "button");
             dom.setAttribute("aria-label", "Upload image");
             dom.innerHTML = `
@@ -468,17 +474,13 @@ const ImageDropzoneNode = Node.create({
                 const pos = getPos();
                 if (typeof pos !== "number") return;
                 const { state } = ed;
-                const { tr }    = state;
+                const { tr } = state;
                 const figureNode = state.schema.nodes[NODE_NAMES.IMAGE_FIGURE].create({
                     src: url, alt, width: null, caption: "", align: ALIGN.LEFT,
                 });
                 tr.replaceWith(pos, pos + 1, figureNode);
                 const afterFigure = pos + figureNode.nodeSize;
-                let hasBlockAfter = false;
-                tr.doc.nodesBetween(afterFigure, tr.doc.content.size, (n, p) => {
-                    if (!hasBlockAfter && n.isBlock && p >= afterFigure) hasBlockAfter = true;
-                });
-                if (!hasBlockAfter)
+                if (!tr.doc.nodeAt(afterFigure))
                     tr.insert(afterFigure, state.schema.nodes[NODE_NAMES.PARAGRAPH].create());
                 try {
                     tr.setSelection(TextSelection.create(tr.doc, afterFigure + 1));
@@ -527,8 +529,8 @@ const ImageDropzoneNode = Node.create({
                 e.target.value = "";
             });
 
-            dom.addEventListener("dragover",  (e) => { e.preventDefault(); dom.classList.add("drag-over"); });
-            dom.addEventListener("dragleave", ()  => dom.classList.remove("drag-over"));
+            dom.addEventListener("dragover", (e) => { e.preventDefault(); dom.classList.add("drag-over"); });
+            dom.addEventListener("dragleave", () => dom.classList.remove("drag-over"));
             dom.addEventListener("drop", (e) => {
                 e.preventDefault();
                 dom.classList.remove("drag-over");
@@ -554,16 +556,16 @@ function isInsideList($from) {
 
 function indentNodes(state, delta) {
     const { selection, tr } = state;
-    const { from, to }      = selection;
-    let changed             = false;
-    const handled           = new Set();
+    const { from, to } = selection;
+    let changed = false;
+    const handled = new Set();
 
     state.doc.nodesBetween(from, to, (node, pos) => {
         if (!INDENTABLE.includes(node.type.name)) return true;
         if (isInsideList(state.doc.resolve(pos))) return true;
         if (handled.has(pos)) return false;
         handled.add(pos);
-        const cur  = node.attrs.indent || 0;
+        const cur = node.attrs.indent || 0;
         const next = cur + delta;
         if (next < 0 || next > INDENT_MAX) return false;
         tr.setNodeMarkup(pos, undefined, { ...node.attrs, indent: next });
@@ -592,7 +594,7 @@ const IndentExtension = Extension.create({
     },
     addCommands() {
         return {
-            indent:  () => ({ state, dispatch }) => {
+            indent: () => ({ state, dispatch }) => {
                 const { tr, changed } = indentNodes(state, +1);
                 if (changed && dispatch) dispatch(tr);
                 return changed;
@@ -621,9 +623,9 @@ const IndentExtension = Extension.create({
  */
 window.initWysiwyg = function ({
     editorEl,
-    initialContent    = "",
-    placeholder       = "Mulai menulis di sini…",
-    uploadUrl         = "/content/upload-image",
+    initialContent = "",
+    placeholder = "Mulai menulis di sini…",
+    uploadUrl = "/content/upload-image",
     onUpdate,
     onSelectionUpdate,
 }) {
@@ -644,7 +646,7 @@ window.initWysiwyg = function ({
             // event handler dan javascript: URI yang lolos.
             transformPastedHTML(html) {
                 const doc = new DOMParser().parseFromString(html, "text/html");
-                const DANGEROUS = ["script","style","iframe","object","embed","noscript"];
+                const DANGEROUS = ["script", "style", "iframe", "object", "embed", "noscript"];
                 DANGEROUS.forEach(tag => doc.querySelectorAll(tag).forEach(el => el.remove()));
                 doc.querySelectorAll("*").forEach(el => {
                     [...el.attributes].forEach(({ name, value }) => {
@@ -666,8 +668,8 @@ window.initWysiwyg = function ({
                     return {
                         ...this.parent?.(),
                         fontSize: {
-                            default:    null,
-                            parseHTML:  (el)    => el.style.fontSize || null,
+                            default: null,
+                            parseHTML: (el) => el.style.fontSize || null,
                             renderHTML: (attrs) => attrs.fontSize ? { style: `font-size: ${attrs.fontSize}` } : {},
                         },
                     };
@@ -688,7 +690,7 @@ window.initWysiwyg = function ({
         ],
         content: initialContent || "",
         onUpdate({ editor }) {
-            onUpdate?.(editor.getHTML());
+            onUpdate?.(editor.getHTML(), editor.getText());
         },
         onSelectionUpdate({ editor }) {
             debouncedSelectionUpdate(editor);
@@ -699,7 +701,7 @@ window.initWysiwyg = function ({
     return {
         editor,
         getFigureAlign: () => getFigureAlign(editor),
-        getFigurePos:   () => getFigurePos(editor.state),
+        getFigurePos: () => getFigurePos(editor.state),
         /** Bersihkan instance dari registry global + destroy editor */
         destroy() {
             editor.destroy();
