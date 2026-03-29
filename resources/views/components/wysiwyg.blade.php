@@ -9,12 +9,6 @@
       $height      — min-height editor (px)
 --}}
 
-@once
-    @push('styles')
-        @vite('resources/css/wysiwyg.css')
-    @endpush
-@endonce
-
 <div class="w-full bg-white border border-gray-200 rounded-xl shadow-sm" x-data="wysiwygEditor({
     id: '{{ $id }}',
     name: '{{ $name }}',
@@ -721,7 +715,7 @@
                         applyLink() {
                             const ed = _ed();
                             if (!ed) return;
-                            // FIX: gunakan window._sanitizeUrl yang masih di-expose
+
                             const safeUrl = window._sanitizeUrl(this.linkBubble.url.trim());
                             if (!safeUrl) {
                                 this.closeLinkBubble();
@@ -729,36 +723,41 @@
                             }
 
                             const sel = this._savedSelection;
-                            const title = this.linkBubble.title.trim();
+                            // FIX: escape title agar tidak bisa inject HTML via link bubble
+                            const safeTitle = window._escapeHtml(this.linkBubble.title.trim());
+                            const linkAttrs = {
+                                href: safeUrl,
+                                target: '_blank',
+                                rel: 'noopener noreferrer'
+                            };
 
                             if (sel && !sel.empty) {
-                                if (title) {
+                                if (safeTitle) {
+                                    // Ada teks selection + title custom → ganti teks selection
                                     ed.chain()
                                         .setTextSelection({
                                             from: sel.from,
                                             to: sel.to
                                         })
                                         .insertContent(
-                                            `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer">${title}</a>`
+                                            `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer">${safeTitle}</a>`
                                             )
                                         .run();
                                 } else {
+                                    // Wrap selection dengan link, teks tidak berubah
                                     ed.chain()
                                         .setTextSelection({
                                             from: sel.from,
                                             to: sel.to
                                         })
-                                        .setLink({
-                                            href: safeUrl,
-                                            target: '_blank',
-                                            rel: 'noopener noreferrer'
-                                        })
+                                        .setLink(linkAttrs)
                                         .run();
                                 }
                             } else {
+                                // Tidak ada selection → insert link baru
                                 ed.chain()
                                     .insertContent(
-                                        `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer">${title || safeUrl}</a>`
+                                        `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer">${safeTitle || safeUrl}</a>`
                                         )
                                     .run();
                             }

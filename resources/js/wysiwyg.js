@@ -39,7 +39,6 @@ const ALIGN = Object.freeze({
 
 const FILE_MAX_BYTES  = 5 * 1024 * 1024;   // 5 MB
 const RESIZE_MIN_PX   = 80;
-const RESIZE_MAX_PCT  = 100;                // % dari container — dicek saat mouseup
 const INDENT_STEP     = 24;
 const INDENT_MAX      = 8;
 const TOOLBAR_DEBOUNCE_MS = 60;            // debounce _syncToolbar
@@ -67,6 +66,16 @@ function sanitizeUrl(raw) {
     } catch {
         return null;
     }
+}
+
+/** Escape karakter HTML berbahaya — cegah XSS di insertContent template string */
+function escapeHtml(str) {
+    return String(str ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
 }
 
 /** Buat debounce wrapper sederhana */
@@ -109,6 +118,7 @@ function getFigureAlign(editor) {
 // initWysiwyg yang mengembalikan editor instance, Alpine memanggil metode
 // helper via wrapper yang kita berikan di bawah.
 window._sanitizeUrl = sanitizeUrl;
+window._escapeHtml   = escapeHtml;
 
 // ── Upload gambar ke server ────────────────────────────────────────────────
 
@@ -627,6 +637,24 @@ window.initWysiwyg = function ({
 
     const editor = new Editor({
         element: editorEl,
+        editorProps: {
+            // ── Paste sanitizer (defense-in-depth, zero dependency) ──
+            // transformPastedHTML dipanggil Tiptap sebelum HTML di-parse ke dokumen.
+            // DOMParser strip script/style secara native — kita hanya hapus
+            // event handler dan javascript: URI yang lolos.
+            transformPastedHTML(html) {
+                const doc = new DOMParser().parseFromString(html, "text/html");
+                const DANGEROUS = ["script","style","iframe","object","embed","noscript"];
+                DANGEROUS.forEach(tag => doc.querySelectorAll(tag).forEach(el => el.remove()));
+                doc.querySelectorAll("*").forEach(el => {
+                    [...el.attributes].forEach(({ name, value }) => {
+                        if (/^on/i.test(name)) { el.removeAttribute(name); return; }
+                        if (/^\s*javascript:/i.test(value)) el.removeAttribute(name);
+                    });
+                });
+                return doc.body.innerHTML;
+            },
+        },
         extensions: [
             StarterKit.configure({ link: false, underline: false }),
             Underline,

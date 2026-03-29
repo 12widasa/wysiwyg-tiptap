@@ -70,11 +70,13 @@
 .wysiwyg-prose mark       { border-radius: 2px; padding: 0 2px; }
 .wysiwyg-prose a          { color: var(--wy-brand); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 
+/* Tailwind preflight me-reset list-style ke none secara global.
+   !important diperlukan agar .wysiwyg-prose menang dari reset tersebut. */
 .wysiwyg-prose ul,
 .wysiwyg-prose ol         { padding-left: 1.5em; margin: 0.3em 0; }
-.wysiwyg-prose ul         { list-style-type: disc; }
-.wysiwyg-prose ol         { list-style-type: decimal; }
-.wysiwyg-prose li         { margin: 0.2em 0; display: list-item; line-height: 1.8; }
+.wysiwyg-prose ul         { list-style-type: disc !important; }
+.wysiwyg-prose ol         { list-style-type: decimal !important; }
+.wysiwyg-prose li         { margin: 0.2em 0; display: list-item !important; line-height: 1.8; }
 
 .wysiwyg-prose blockquote {
     border-left: 3px solid var(--wy-brand);

@@ -1,5 +1,15 @@
 <?php
 
+/**
+ * HTMLPurifier config — hanya setting dasar.
+ *
+ * PENTING: figure & figcaption TIDAK bisa didaftarkan di sini karena
+ * HTMLPurifier memerlukan PHP code (maybeGetRawHTMLDefinition) untuk
+ * mendefinisikan elemen HTML5 custom. Sanitasi lengkap dilakukan di
+ * ContentController::sanitize() menggunakan HTMLPurifier_Config langsung.
+ *
+ * File ini hanya dipakai jika helper clean() dipanggil di tempat lain.
+ */
 return [
     'encoding'      => 'UTF-8',
     'finalize'      => true,
@@ -7,50 +17,12 @@ return [
     'cacheFileMode' => 0755,
     'settings'      => [
         'default' => [
-            'HTML.Doctype'             => 'XHTML 1.0 Transitional',
-
-            // figure & figcaption ditambahkan agar tidak perlu bypass purifier
-            // data-* di-handle via HTML.Allowed dengan AllowDataAttributes
-            'HTML.Allowed' => implode(',', [
-                'p',
-                'br',
-                'strong',
-                'em',
-                'u',
-                's',
-                'h1',
-                'h2',
-                'h3',
-                'h4',
-                'h5',
-                'h6',
-                'ul',
-                'ol',
-                'li',
-                'blockquote',
-                'a[href|target|rel]',
-                'img[src|alt|width|style|class]',
-                'figure[data-type|data-src|data-alt|data-width|data-caption|data-align|class]',
-                'figcaption[class]',
-                'table',
-                'thead',
-                'tbody',
-                'tr',
-                'th[scope|style]',
-                'td[colspan|rowspan|style]',
-                'hr',
-                'span[style]',
-                'input[type|checked|disabled]', // task list checkbox (readonly di output)
-                'label',
-            ]),
-
+            'HTML.Doctype'             => 'HTML 4.01 Transitional',
+            'HTML.Allowed'             => 'p,br,strong,em,u,s,h1,h2,h3,h4,h5,h6,ul,ol,li,blockquote,a[href|target|rel],img[src|alt|width|style|class],table,thead,tbody,tr,th[scope|style],td[colspan|rowspan|style],hr,span[style],input[type|checked|disabled],label',
             'CSS.AllowedProperties'    => 'margin-left,text-align,background-color,color,font-size,width,max-width',
             'AutoFormat.AutoParagraph' => false,
             'AutoFormat.RemoveEmpty'   => false,
             'Core.EscapeInvalidTags'   => true,
-
-            // Blokir javascript: dan data: URI di href/src
-            'URI.SafeIframeRegexp'     => null,
             'URI.AllowedSchemes'       => ['http' => true, 'https' => true, 'mailto' => true],
         ],
     ],
