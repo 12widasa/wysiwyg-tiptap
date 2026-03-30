@@ -120,102 +120,26 @@
 /* ── Task list ── */
 /* Tidak bisa Tailwind: attribute selector [data-type] + nested structure */
 
-/*
-   Custom checkbox — ukuran ikut font-size via em.
-   Struktur Tiptap v3: <li><label><input><span></span></label><div>...</div></li>
-   Teknik: sembunyikan input native, gunakan <span> sebagai visual checkbox.
-   Ukuran 0.85em agar proporsional di semua font size.
-*/
-
-/* Shared base */
-.wysiwyg-prose ul[data-type="taskList"],
-.wysiwyg-editor .ProseMirror ul[data-type="taskList"] {
-    list-style: none;
-    padding-left: 0;
-}
-
-/* li */
-.wysiwyg-prose ul[data-type="taskList"] li,
-.wysiwyg-editor .ProseMirror ul[data-type="taskList"] li[data-type="taskItem"] {
-    display: flex;
-    align-items: center;
-    gap: 0.5em;
-    list-style: none;
-}
-.wysiwyg-prose ul[data-type="taskList"] li { display: flex !important; }
-
-/* label */
-.wysiwyg-prose ul[data-type="taskList"] li > label,
-.wysiwyg-editor .ProseMirror ul[data-type="taskList"] li[data-type="taskItem"] > label {
+/* Output (show.blade.php) */
+.wysiwyg-prose ul[data-type="taskList"]             { list-style: none; padding-left: 0; }
+.wysiwyg-prose ul[data-type="taskList"] li          { display: flex; align-items: center; gap: 8px; }
+.wysiwyg-prose ul[data-type="taskList"] li > label  { display: flex; align-items: center; position: relative; top: 2px; }
+.wysiwyg-prose ul[data-type="taskList"] li input[type="checkbox"] {
     cursor: pointer;
-    display: flex;
-    align-items: center;
-    flex-shrink: 0;
-    position: relative;
+    accent-color: var(--wy-brand); /* tidak ada Tailwind utility untuk accent-color custom */
 }
 
-/* Sembunyikan input native */
-.wysiwyg-prose ul[data-type="taskList"] li input[type="checkbox"],
-.wysiwyg-editor .ProseMirror ul[data-type="taskList"] li input[type="checkbox"] {
-    position: absolute;
-    opacity: 0;
-    width: 0;
-    height: 0;
-    margin: 0;
-    pointer-events: none;
+/* Editor aktif (Tiptap/ProseMirror) — FIX: bullet & checkbox muncul dobel
+   karena ul default masih punya list-style. Harus di-reset di sini juga.
+   Tiptap v3: ul[data-type="taskList"] > li[data-type="taskItem"] > label + div */
+.wysiwyg-editor .ProseMirror ul[data-type="taskList"]                          { list-style: none; padding-left: 0; }
+.wysiwyg-editor .ProseMirror ul[data-type="taskList"] li[data-type="taskItem"] { display: flex; align-items: center; gap: 8px; list-style: none; }
+.wysiwyg-editor .ProseMirror ul[data-type="taskList"] li[data-type="taskItem"] > label { cursor: pointer; display: flex; align-items: center; position: relative; top: 2px; }
+.wysiwyg-editor .ProseMirror ul[data-type="taskList"] li[data-type="taskItem"] > div   { flex: 1; min-width: 0; }
+.wysiwyg-editor .ProseMirror ul[data-type="taskList"] li[data-type="taskItem"] input[type="checkbox"] {
+    cursor: pointer;
+    accent-color: var(--wy-brand);
 }
-
-/* span = visual checkbox box */
-.wysiwyg-prose ul[data-type="taskList"] li > label > span,
-.wysiwyg-editor .ProseMirror ul[data-type="taskList"] li[data-type="taskItem"] > label > span {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    width: 0.85em;
-    height: 0.85em;
-    border: 1.5px solid #9ca3af;
-    border-radius: 3px;
-    background: #fff;
-    transition: background 0.15s, border-color 0.15s;
-    position: relative;
-}
-
-/* Checkmark via ::after pada span */
-.wysiwyg-prose ul[data-type="taskList"] li > label > span::after,
-.wysiwyg-editor .ProseMirror ul[data-type="taskList"] li[data-type="taskItem"] > label > span::after {
-    content: '';
-    position: absolute;
-    display: none;
-    left: 0.17em;
-    top: 0.03em;
-    width: 0.28em;
-    height: 0.5em;
-    border: 0.12em solid #fff;
-    border-top: none;
-    border-left: none;
-    transform: rotate(45deg);
-}
-
-/* Checked — label:has(input:checked) span */
-.wysiwyg-prose ul[data-type="taskList"] li > label:has(input:checked) > span,
-.wysiwyg-editor .ProseMirror ul[data-type="taskList"] li[data-type="taskItem"] > label:has(input:checked) > span {
-    background: var(--wy-brand);
-    border-color: var(--wy-brand);
-}
-.wysiwyg-prose ul[data-type="taskList"] li > label:has(input:checked) > span::after,
-.wysiwyg-editor .ProseMirror ul[data-type="taskList"] li[data-type="taskItem"] > label:has(input:checked) > span::after {
-    display: block;
-}
-
-/* Hover */
-.wysiwyg-prose ul[data-type="taskList"] li > label:hover > span,
-.wysiwyg-editor .ProseMirror ul[data-type="taskList"] li[data-type="taskItem"] > label:hover > span {
-    border-color: var(--wy-brand);
-}
-
-/* div konten */
-.wysiwyg-editor .ProseMirror ul[data-type="taskList"] li[data-type="taskItem"] > div { flex: 1; min-width: 0; }
 
 /* ── Figure display (prose-content / output) ── */
 .wysiwyg-prose figure.img-figure            { display: block; margin: 0.6em 0; max-width: 100%; }
