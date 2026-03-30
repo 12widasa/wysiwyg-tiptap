@@ -21,79 +21,6 @@
     {{-- ── Toolbar ── --}}
     @include('components.wysiwyg-toolbar')
 
-    {{-- ── Table Toolbar ── --}}
-    <div x-show="inTable" x-cloak x-transition
-        class="flex flex-wrap justify-center items-center gap-1 px-3 py-2 border-b border-gray-200 bg-gray-50">
-        <span class="text-xs text-gray-400 font-mono mr-2">Table:</span>
-        <button type="button" @click="cmd('addColumnBefore')" title="Tambah Kolom Kiri" class="wy-btn">
-            <svg class="w-[15px] h-[15px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="3" width="18" height="18" rx="2" />
-                <path d="M9 3v18" />
-                <line x1="6" y1="6" x2="6" y2="15" />
-                <line x1="3" y1="9" x2="9" y2="9" />
-            </svg>
-        </button>
-        <button type="button" @click="cmd('addColumnAfter')" title="Tambah Kolom Kanan" class="wy-btn">
-            <svg class="w-[15px] h-[15px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="3" width="18" height="18" rx="2" />
-                <path d="M15 3v18" />
-                <line x1="18" y1="9" x2="18" y2="15" />
-                <line x1="15" y1="12" x2="21" y2="12" />
-            </svg>
-        </button>
-        <button type="button" @click="cmd('deleteColumn')" title="Hapus Kolom" class="wy-btn">
-            <svg class="w-[15px] h-[15px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="3" width="18" height="18" rx="2" />
-                <path d="M9 3v18" />
-                <line x1="4" y1="9" x2="8" y2="13" />
-                <line x1="8" y1="9" x2="4" y2="13" />
-            </svg>
-        </button>
-        <div class="w-px h-[18px] bg-gray-300 mx-1 shrink-0"></div>
-        <button type="button" @click="cmd('addRowBefore')" title="Tambah Baris Atas" class="wy-btn">
-            <svg class="w-[15px] h-[15px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="3" width="18" height="18" rx="2" />
-                <path d="M3 9h18" />
-                <line x1="12" y1="3" x2="12" y2="9" />
-                <line x1="9" y1="6" x2="15" y2="6" />
-            </svg>
-        </button>
-        <button type="button" @click="cmd('addRowAfter')" title="Tambah Baris Bawah" class="wy-btn">
-            <svg class="w-[15px] h-[15px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="3" width="18" height="18" rx="2" />
-                <path d="M3 15h18" />
-                <line x1="12" y1="15" x2="12" y2="21" />
-                <line x1="9" y1="18" x2="15" y2="18" />
-            </svg>
-        </button>
-        <button type="button" @click="cmd('deleteRow')" title="Hapus Baris" class="wy-btn">
-            <svg class="w-[15px] h-[15px]" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="3" width="18" height="18" rx="2" />
-                <path d="M3 9h18" />
-                <line x1="9" y1="6" x2="13" y2="10" />
-                <line x1="13" y1="6" x2="9" y2="10" />
-            </svg>
-        </button>
-        <div class="w-px h-[18px] bg-gray-300 mx-1 shrink-0"></div>
-        <button type="button" @click="cmd('deleteTable')" title="Hapus Table"
-            class="wy-btn text-red-400 hover:bg-red-50">
-            <svg class="w-[15px] h-[15px]" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="3 6 5 6 21 6" />
-                <path d="M19 6l-1 14H6L5 6" />
-                <path d="M10 11v6" />
-                <path d="M14 11v6" />
-                <path d="M9 6V4h6v2" />
-            </svg>
-        </button>
-    </div>
-
     {{-- ── Editor Area ── --}}
     <div id="{{ $id }}"
         class="wysiwyg-editor wysiwyg-prose outline-none px-12 py-7 text-[15px] leading-[1.8] text-gray-900"
@@ -228,15 +155,13 @@
                                             .length : 0) + ' words';
                                         this.statChars = txt.length + ' chars';
                                     },
-                                    onSelectionUpdate: () => {
-                                        this._syncToolbar();
-                                    },
+                                    onSelectionUpdate: () => this._syncToolbar(),
                                 });
                                 this._syncToolbar();
                             });
                         },
 
-                        // FIX: destroy dipanggil Alpine saat component di-remove dari DOM
+                        // destroy dipanggil Alpine saat component di-remove dari DOM
                         // (Livewire navigate, Turbo, SPA routing)
                         destroy() {
                             _instance?.destroy();
@@ -260,7 +185,6 @@
                         setAlign(align) {
                             const ed = _ed();
                             if (!ed) return;
-                            // FIX: gunakan getFigurePos dari instance, bukan window._getFigurePos
                             const figurePos = _instance.getFigurePos();
                             if (figurePos !== null) {
                                 const figNode = ed.state.doc.nodeAt(figurePos);
@@ -282,7 +206,6 @@
 
                         alignActive(align) {
                             if (!_instance) return false;
-                            // FIX: gunakan getFigureAlign dari instance, bukan window._getFigureAlign
                             const figureAlign = _instance.getFigureAlign();
                             if (figureAlign !== null) return figureAlign === align;
                             return _ed()?.isActive({
@@ -331,51 +254,40 @@
                             const ed = _ed();
                             if (!ed) return;
 
-                            const safeUrl = _instance.sanitizeUrl(this.linkBubble.url.trim());
-                            if (!safeUrl) {
-                                this.closeLinkBubble();
-                                return;
-                            }
+                            const url = _instance.sanitizeUrl(this.linkBubble.url.trim());
+                            if (!url) return this.closeLinkBubble();
 
                             const sel = this._savedSelection;
-                            // FIX: escape title agar tidak bisa inject HTML via link bubble
-                            const safeTitle = _instance.escapeHtml(this.linkBubble.title.trim());
-                            const linkAttrs = {
-                                href: safeUrl,
-                                target: '_blank',
-                                rel: 'noopener noreferrer'
-                            };
+                            const title = _instance.escapeHtml(this.linkBubble.title
+                                .trim()); // cegah XSS via title input
 
-                            if (sel && !sel.empty) {
-                                if (safeTitle) {
-                                    // Ada teks selection + title custom → ganti teks selection
-                                    ed.chain()
-                                        .setTextSelection({
-                                            from: sel.from,
-                                            to: sel.to
-                                        })
-                                        .insertContent(
-                                            `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer">${safeTitle}</a>`
-                                        )
-                                        .run();
-                                } else {
-                                    // Wrap selection dengan link, teks tidak berubah
-                                    ed.chain()
-                                        .setTextSelection({
-                                            from: sel.from,
-                                            to: sel.to
-                                        })
-                                        .setLink(linkAttrs)
-                                        .run();
-                                }
-                            } else {
-                                // Tidak ada selection → insert link baru
+                            if (sel && !sel.empty && !title) {
+                                // Ada selection, tidak ada custom title → wrap teks existing dengan link
                                 ed.chain()
-                                    .insertContent(
-                                        `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer">${safeTitle || safeUrl}</a>`
-                                    )
+                                    .setTextSelection({
+                                        from: sel.from,
+                                        to: sel.to
+                                    })
+                                    .setLink({
+                                        href: url,
+                                        target: '_blank',
+                                        rel: 'noopener noreferrer'
+                                    })
                                     .run();
+                            } else {
+                                // Tidak ada selection, atau ada custom title → insert/ganti dengan teks link baru
+                                const text = title || url;
+                                const chain = (sel && !sel.empty) ?
+                                    ed.chain().setTextSelection({
+                                        from: sel.from,
+                                        to: sel.to
+                                    }) :
+                                    ed.chain();
+                                chain.insertContent(
+                                    `<a href="${url}" target="_blank" rel="noopener noreferrer">${text}</a>`
+                                ).run();
                             }
+
                             this.closeLinkBubble();
                         },
 
@@ -389,33 +301,21 @@
                         },
 
                         // ── Sync toolbar state dari editor ──
-                        _syncStructLabel(ed) {
-                            let label = 'Paragraph';
-                            for (let i = 1; i <= 6; i++) {
-                                if (ed.isActive('heading', {
-                                        level: i
-                                    })) {
-                                    label = `Heading ${i}`;
-                                    break;
-                                }
-                            }
-                            if (ed.isActive('blockquote')) label = 'Quote';
-                            this.structLabel = label;
-                        },
-
-                        _syncNodeName(ed) {
-                            const node = ed.state.selection.$anchor.parent;
-                            let nodeName = node.type.name;
-                            if (nodeName === 'heading') nodeName = 'h' + node.attrs.level;
-                            this.statNode = nodeName;
-                        },
-
                         _syncToolbar() {
                             const ed = _ed();
                             if (!ed) return;
-                            this._syncStructLabel(ed);
-                            this.inTable = ed.isActive('table');
-                            this._syncNodeName(ed);
+
+                            // Baca state sekali, tidak 8x isActive()
+                            const node = ed.state.selection.$anchor.parent;
+                            const name = node.type.name;
+
+                            this.structLabel = name === 'heading' ? `Heading ${node.attrs.level}` :
+                                name === 'blockquote' ? 'Quote' :
+                                'Paragraph';
+
+                            this.inTable = ed.isActive(
+                                'table'); // table masih perlu isActive karena cek ancestor
+                            this.statNode = name === 'heading' ? 'h' + node.attrs.level : name;
                         },
                     };
                 });

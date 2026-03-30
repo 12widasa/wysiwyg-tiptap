@@ -17,7 +17,7 @@ class AppServiceProvider extends ServiceProvider
             $config->set('HTML.Doctype', 'HTML 4.01 Transitional');
 
             // Task list (<ul data-type="taskList">) tidak ikut di-purify —
-            // ditangani secara terpisah di ContentController::sanitize()
+            // ditangani secara terpisah di HtmlSanitizer::sanitize()
             // menggunakan DOMDocument agar <label>, <input>, <div> di dalam
             // <li> tidak di-strip oleh content model HTML 4.01 yang ketat.
             $config->set('HTML.Allowed', implode(',', [

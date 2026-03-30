@@ -417,7 +417,7 @@ const ImageFigureNode = Node.create({
                 return true;
             };
 
-            // FIX: destroy harus hapus SEMUA document listener agar tidak memory leak
+            // destroy: hapus document listener agar tidak memory leak
             const destroy = () => {
                 document.removeEventListener("click", onDocClick);
             };
@@ -484,7 +484,7 @@ const ImageDropzoneNode = Node.create({
                 ed.view.focus();
             }
 
-            // FIX: AbortController untuk cancel upload jika dropzone sudah diganti
+            // AbortController untuk cancel upload jika dropzone diganti sebelum selesai
             let currentAbort = null;
 
             async function handleFile(file) {
@@ -533,7 +533,7 @@ const ImageDropzoneNode = Node.create({
                 if (file) handleFile(file);
             });
 
-            // FIX: destroy batalkan upload yang sedang berjalan
+            // destroy: batalkan upload yang sedang berjalan
             const destroy = () => { currentAbort?.abort(); };
 
             return { dom, destroy };
@@ -627,7 +627,7 @@ window.initWysiwyg = function ({
     // Simpan uploadUrl di dataset agar bisa diakses ImageDropzoneNode
     editorEl.dataset.uploadUrl = uploadUrl;
 
-    // FIX: debounce selection callback agar tidak trigger _syncToolbar tiap keystroke
+    // Debounce selection callback agar tidak trigger _syncToolbar tiap keystroke
     const debouncedSelectionUpdate = debounce((editor) => {
         onSelectionUpdate?.(editor);
     }, TOOLBAR_DEBOUNCE_MS);
@@ -685,9 +685,9 @@ window.initWysiwyg = function ({
             TableCell,
             Placeholder.configure({ placeholder }),
             TaskList,
-            // FIX: TaskItem v3 default punya isolating:true (seperti table cell),
+            // TaskItem v3 default punya isolating:true (seperti table cell),
             // yang menyebabkan arrow kiri/kanan tidak bisa keluar dari task item.
-            // Override isolating ke false agar navigasi normal seperti list biasa.
+            // Override ke false agar navigasi normal seperti list biasa.
             TaskItem.configure({ nested: true }).extend({
                 isolating: false,
             }),

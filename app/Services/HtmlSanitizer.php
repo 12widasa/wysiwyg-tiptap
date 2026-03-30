@@ -17,30 +17,47 @@ class HtmlSanitizer
      * (<label><input> + <div> di dalam <li>) karena content model terlalu ketat.
      *
      * Strategi:
-     *   1. Ekstrak <ul data-type="taskList"> → placeholder
+     *   1. Ekstrak & sanitasi <ul data-type="taskList"> → simpan sebagai placeholder
      *   2. HTMLPurifier untuk sisa HTML
-     *   3. Sanitasi task list manual via DOMDocument
-     *   4. Restore placeholder
+     *   3. Restore placeholder
      */
     public function sanitize(string $html): string
     {
+        // Step 1: Ekstrak & sanitasi task list via DOM — aman untuk nested <ul>
+        // Regex tidak dipakai karena `.*?` non-greedy akan berhenti di </ul> pertama
+        // yang ditemui, sehingga nested task list akan terpotong.
         $placeholders = [];
-        $counter      = 0;
+        $doc          = new DOMDocument('1.0', 'UTF-8');
+        libxml_use_internal_errors(true);
+        $doc->loadHTML('<?xml encoding="UTF-8"><body>' . $html . '</body>', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+        libxml_clear_errors();
 
-        // Step 1: Ekstrak task list
-        $html = preg_replace_callback(
-            '/<ul[^>]*data-type=["\']taskList["\'][^>]*>.*?<\/ul>/si',
-            function (array $m) use (&$placeholders, &$counter): string {
-                $key                = '%%TASKLIST_' . $counter . '%%';
-                $placeholders[$key] = $this->sanitizeTaskList($m[0]);
-                $counter++;
-                return $key;
-            },
-            $html
-        );
+        $xpath      = new \DOMXPath($doc);
+        $taskLists  = $xpath->query('//ul[@data-type="taskList"]');
+        $counter    = 0;
+
+        // Iterasi dari belakang agar index tidak bergeser saat node diganti
+        $nodes = iterator_to_array($taskLists);
+        foreach (array_reverse($nodes) as $ul) {
+            // Lewati jika ini adalah child dari taskList lain (sudah diproses oleh parent-nya)
+            if ($xpath->query('ancestor::ul[@data-type="taskList"]', $ul)->length > 0) {
+                continue;
+            }
+            $key          = '%%TASKLIST_' . $counter . '%%';
+            $placeholder  = $doc->createTextNode($key);
+            $ul->parentNode->replaceChild($placeholder, $ul);
+            $placeholders[$key] = $this->sanitizeTaskList($doc->saveHTML($ul));
+            $counter++;
+        }
+
+        $body = $doc->getElementsByTagName('body')->item(0);
+        $html = '';
+        foreach ($body->childNodes as $node) {
+            $html .= $doc->saveHTML($node);
+        }
 
         // Step 2: Purify sisa HTML
-        $clean = $this->purifier->purify($html ?? '');
+        $clean = $this->purifier->purify($html);
 
         // Step 3: Restore task list
         foreach ($placeholders as $key => $sanitized) {
@@ -65,14 +82,14 @@ class HtmlSanitizer
             return '';
         }
 
-        $result = '';
+        $parts = [];
         foreach ($root->childNodes as $node) {
             if (($node instanceof DOMElement) && strtolower($node->nodeName) === 'ul') {
-                $result .= $this->buildTaskListHtml($node);
+                $parts[] = $this->buildTaskListHtml($node);
             }
         }
 
-        return $result;
+        return implode('', $parts);
     }
 
     private function buildTaskListHtml(DOMElement $ul): string
@@ -84,12 +101,11 @@ class HtmlSanitizer
                 continue;
             }
 
-            $checked   = $node->getAttribute('data-checked') === 'true' ? 'true' : 'false';
-            $isChecked = $checked === 'true';
-            $text      = $this->extractText($node);
+            $checked = $node->getAttribute('data-checked') === 'true';
+            $text    = $this->extractText($node);
 
-            $out .= '<li data-type="taskItem" data-checked="' . $checked . '">';
-            $out .= '<label><input type="checkbox"' . ($isChecked ? ' checked' : '') . ' disabled></label>';
+            $out .= '<li data-type="taskItem" data-checked="' . ($checked ? 'true' : 'false') . '">';
+            $out .= '<label><input type="checkbox"' . ($checked ? ' checked' : '') . ' disabled></label>';
             $out .= '<div><p>' . htmlspecialchars($text, ENT_QUOTES | ENT_HTML5, 'UTF-8') . '</p></div>';
             $out .= '</li>';
         }

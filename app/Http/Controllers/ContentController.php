@@ -51,8 +51,13 @@ class ContentController extends Controller
             ],
         ]);
 
+        // Gunakan ekstensi dari MIME type yang dideteksi server, bukan dari nama file user.
+        // Ini mencegah ekstensi berbahaya tersimpan jika MIME detection berhasil di-bypass.
+        $mimeToExt = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/gif' => 'gif', 'image/webp' => 'webp'];
+
         try {
-            $ext      = strtolower($request->file('image')->getClientOriginalExtension());
+            $mime     = $request->file('image')->getMimeType();
+            $ext      = $mimeToExt[$mime] ?? 'jpg';
             $filename = Str::uuid() . '.' . $ext;
             $path     = $request->file('image')->storeAs('content-images', $filename, 'public');
 

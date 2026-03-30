@@ -333,3 +333,81 @@
         </div>
     </div>
 </div>
+
+{{-- ── Table Toolbar (muncul hanya saat kursor di dalam tabel) ── --}}
+<div x-show="inTable" x-cloak x-transition
+    class="flex flex-wrap justify-center items-center gap-1 px-3 py-2 border-b border-gray-200 bg-gray-50">
+    <span class="text-xs text-gray-400 font-mono mr-2">Table:</span>
+
+    <button type="button" @click="cmd('addColumnBefore')" title="Tambah Kolom Kiri" class="wy-btn">
+        <svg class="w-[15px] h-[15px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2" />
+            <path d="M9 3v18" />
+            <line x1="6" y1="6" x2="6" y2="15" />
+            <line x1="3" y1="9" x2="9" y2="9" />
+        </svg>
+    </button>
+    <button type="button" @click="cmd('addColumnAfter')" title="Tambah Kolom Kanan" class="wy-btn">
+        <svg class="w-[15px] h-[15px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2" />
+            <path d="M15 3v18" />
+            <line x1="18" y1="9" x2="18" y2="15" />
+            <line x1="15" y1="12" x2="21" y2="12" />
+        </svg>
+    </button>
+    <button type="button" @click="cmd('deleteColumn')" title="Hapus Kolom" class="wy-btn">
+        <svg class="w-[15px] h-[15px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2" />
+            <path d="M9 3v18" />
+            <line x1="4" y1="9" x2="8" y2="13" />
+            <line x1="8" y1="9" x2="4" y2="13" />
+        </svg>
+    </button>
+
+    <div class="w-px h-[18px] bg-gray-300 mx-1 shrink-0"></div>
+
+    <button type="button" @click="cmd('addRowBefore')" title="Tambah Baris Atas" class="wy-btn">
+        <svg class="w-[15px] h-[15px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2" />
+            <path d="M3 9h18" />
+            <line x1="12" y1="3" x2="12" y2="9" />
+            <line x1="9" y1="6" x2="15" y2="6" />
+        </svg>
+    </button>
+    <button type="button" @click="cmd('addRowAfter')" title="Tambah Baris Bawah" class="wy-btn">
+        <svg class="w-[15px] h-[15px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2" />
+            <path d="M3 15h18" />
+            <line x1="12" y1="15" x2="12" y2="21" />
+            <line x1="9" y1="18" x2="15" y2="18" />
+        </svg>
+    </button>
+    <button type="button" @click="cmd('deleteRow')" title="Hapus Baris" class="wy-btn">
+        <svg class="w-[15px] h-[15px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2" />
+            <path d="M3 9h18" />
+            <line x1="9" y1="6" x2="13" y2="10" />
+            <line x1="13" y1="6" x2="9" y2="10" />
+        </svg>
+    </button>
+
+    <div class="w-px h-[18px] bg-gray-300 mx-1 shrink-0"></div>
+
+    <button type="button" @click="cmd('deleteTable')" title="Hapus Table"
+        class="wy-btn text-red-400 hover:bg-red-50">
+        <svg class="w-[15px] h-[15px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6" />
+            <path d="M19 6l-1 14H6L5 6" />
+            <path d="M10 11v6" />
+            <path d="M14 11v6" />
+            <path d="M9 6V4h6v2" />
+        </svg>
+    </button>
+</div>
