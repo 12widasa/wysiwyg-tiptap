@@ -330,8 +330,13 @@ const ImageFigureNode = Node.create({
             caption.value = node.attrs.caption || "";
             caption.setAttribute("aria-label", "Image caption");
 
-            wrap.appendChild(img);
-            wrap.appendChild(handle);
+            // imgWrap: container tipis agar handle bisa di-overlay di atas image
+            const imgWrap = document.createElement("div");
+            imgWrap.className = "img-figure__img-wrap";
+            imgWrap.appendChild(img);
+            imgWrap.appendChild(handle);
+
+            wrap.appendChild(imgWrap);
             wrap.appendChild(caption);
 
             let currentAttrs = { ...node.attrs };
@@ -358,7 +363,9 @@ const ImageFigureNode = Node.create({
                     const newW = Math.round(Math.min(maxW, Math.max(RESIZE_MIN_PX, startW + (e.clientX - startX))));
                     const pos = getPos();
                     if (typeof pos !== "number") return;
-                    currentAttrs = { ...currentAttrs, width: newW };
+                    // Baca caption langsung dari DOM agar tidak overwrite nilai
+                    // yang belum sempat di-dispatch saat blur race dengan mousedown.
+                    currentAttrs = { ...currentAttrs, width: newW, caption: caption.value.trim() };
                     const { tr } = ed.state;
                     tr.setNodeMarkup(pos, undefined, { ...currentAttrs });
                     ed.view.dispatch(tr);

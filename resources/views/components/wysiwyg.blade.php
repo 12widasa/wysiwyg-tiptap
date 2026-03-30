@@ -9,7 +9,7 @@
       $height      — min-height editor (px)
 --}}
 
-<div class="w-full bg-white border border-gray-200 rounded-xl shadow-sm" x-data="wysiwygEditor({
+<div class="w-full relative bg-white border border-gray-200 rounded-xl shadow-sm" x-data="wysiwygEditor({
     id: '{{ $id }}',
     name: '{{ $name }}',
     value: {{ json_encode($value) }},
@@ -24,7 +24,8 @@
     {{-- ── Editor Area ── --}}
     <div id="{{ $id }}"
         class="wysiwyg-editor wysiwyg-prose outline-none px-12 py-7 text-[15px] leading-[1.8] text-gray-900"
-        style="min-height: {{ $height }}px; caret-color: #6b4fbb" aria-label="Editor" aria-multiline="true">
+        style="min-height: {{ $height }}px; caret-color: var(--color-brand)" aria-label="Editor"
+        aria-multiline="true">
     </div>
 
     {{-- ── Status Bar ── --}}
@@ -43,12 +44,14 @@
     <input type="hidden" name="{{ $name }}" id="{{ $id }}-input" :value="editorHtml">
 
     {{-- ── Link Bubble ── --}}
+    {{-- Overlay transparan: klik di luar bubble → tutup --}}
+    <div x-show="linkBubble.visible" x-cloak class="absolute inset-0 z-[9998]" @click="closeLinkBubble()"></div>
+
     <div x-show="linkBubble.visible" x-cloak x-transition
-        class="fixed z-[9999] bg-white border border-gray-200 rounded-lg shadow-xl p-3 flex flex-col gap-2 w-80"
-        :style="`top: ${linkBubble.top}px; left: ${linkBubble.left}px; transform: translateX(-50%)`">
+        class="absolute left-1/2 -translate-x-1/2 top-12 z-[9999] bg-white border border-gray-200 rounded-lg shadow-xl p-3 flex flex-col gap-2 w-80">
         <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">Insert Link</p>
         <div
-            class="flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded px-2.5 py-1.5 focus-within:border-violet-500 transition-colors">
+            class="flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded px-2.5 py-1.5 focus-within:border-[var(--color-brand)] transition-colors">
             <svg class="w-3 h-3 text-gray-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="4 7 4 4 20 4 20 7" />
@@ -60,7 +63,7 @@
                 @keydown.enter="$refs.linkUrlInput.focus()" @keydown.escape="closeLinkBubble()">
         </div>
         <div
-            class="flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded px-2.5 py-1.5 focus-within:border-violet-500 transition-colors">
+            class="flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded px-2.5 py-1.5 focus-within:border-[var(--color-brand)] transition-colors">
             <svg class="w-3 h-3 text-gray-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
@@ -72,7 +75,7 @@
         </div>
         <div class="flex justify-end">
             <button type="button" @click="applyLink()"
-                class="flex items-center gap-1.5 px-3 py-1.5 bg-violet-600 hover:bg-violet-700 text-white rounded text-xs font-semibold transition-colors">
+                class="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--color-brand)] hover:bg-[var(--color-brand-dark)] text-white rounded text-xs font-semibold transition-colors">
                 <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
                     stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="20 6 9 17 4 12" />
@@ -127,8 +130,6 @@
                         // ── Link bubble ──
                         linkBubble: {
                             visible: false,
-                            top: 0,
-                            left: 0,
                             title: '',
                             url: ''
                         },
@@ -233,12 +234,6 @@
                             }
                             this.linkBubble.title = title;
                             this.linkBubble.url = '';
-                            const shell = this.$refs.shell;
-                            const rect = shell.getBoundingClientRect();
-                            const toolbarH = shell.querySelector('[role="toolbar"]')?.getBoundingClientRect()
-                                .height ?? 48;
-                            this.linkBubble.top = rect.top + toolbarH + 8;
-                            this.linkBubble.left = rect.left + rect.width / 2;
                             this.linkBubble.visible = true;
                             this.$nextTick(() => this.$refs.linkUrlInput.focus());
                         },

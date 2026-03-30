@@ -174,8 +174,15 @@
     margin: 0.6em 0;
     max-width: 100%;
     vertical-align: top;
-    overflow: hidden;
 }
+
+/* Wrapper tipis di atas img — tempat handle di-overlay */
+.img-figure__img-wrap {
+    position: relative;
+    display: block;
+    line-height: 0; /* hilangkan gap bawah inline img */
+}
+
 .img-figure img {
     display: block;
     max-width: 100%;
@@ -193,26 +200,27 @@
 .img-figure--center         { margin-left: auto; margin-right: auto; display: block; }
 .img-figure--right          { margin-left: auto; margin-right: 0;    display: block; }
 
-/* ── Resize handle ── */
+/* ── Resize handle — overlay di pojok kanan bawah image ── */
 .resize-handle {
     position: absolute;
-    bottom: 4px;
-    right: 4px;
-    width: 14px;
-    height: 14px;
+    bottom: 8px;
+    right: 8px;
+    width: 18px;
+    height: 18px;
     cursor: se-resize;
     background: var(--color-brand);
-    border-radius: 3px;
+    border-radius: 4px;
     opacity: 0;
     transition: opacity 0.15s;
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 1;
+    z-index: 2;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.25);
 }
 .img-figure:hover .resize-handle,
 .img-figure.selected .resize-handle { opacity: 1; }
-.resize-handle svg { width: 8px; height: 8px; stroke: #fff; fill: none; stroke-width: 2; pointer-events: none; }
+.resize-handle svg { width: 10px; height: 10px; stroke: #fff; fill: none; stroke-width: 2.2; pointer-events: none; }
 
 /* ── Caption ── */
 .img-caption {
