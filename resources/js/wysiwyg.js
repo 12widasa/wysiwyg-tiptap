@@ -87,38 +87,30 @@ function debounce(fn, ms) {
     };
 }
 
-/** Cari posisi node imageFigure di selection, atau null */
-function getFigurePos(state) {
+/** Cari imageFigure di selection — kembalikan { node, pos } atau null */
+function getFigureNode(state) {
     const { selection } = state;
     const { $from } = selection;
     for (let d = $from.depth; d >= 0; d--) {
         if ($from.node(d).type.name === NODE_NAMES.IMAGE_FIGURE)
-            return $from.before(d);
+            return { node: $from.node(d), pos: $from.before(d) };
     }
     if (selection.node?.type.name === NODE_NAMES.IMAGE_FIGURE)
-        return selection.from;
+        return { node: selection.node, pos: selection.from };
     return null;
+}
+
+/** Ambil posisi imageFigure yang sedang di-select, atau null */
+function getFigurePos(state) {
+    return getFigureNode(state)?.pos ?? null;
 }
 
 /** Ambil align dari imageFigure yang sedang di-select, atau null */
-function getFigureAlign(editor) {
-    const { selection } = editor.state;
-    const { $from } = selection;
-    for (let d = $from.depth; d >= 0; d--) {
-        if ($from.node(d).type.name === NODE_NAMES.IMAGE_FIGURE)
-            return $from.node(d).attrs.align || ALIGN.LEFT;
-    }
-    if (selection.node?.type.name === NODE_NAMES.IMAGE_FIGURE)
-        return selection.node.attrs.align || ALIGN.LEFT;
-    return null;
+function getFigureAlign(state) {
+    return getFigureNode(state)?.node.attrs.align ?? null;
 }
 
-// Expose hanya yang benar-benar dibutuhkan oleh Alpine di blade
-// getFigureAlign & getFigurePos tidak perlu di window — dipanggil lewat
-// initWysiwyg yang mengembalikan editor instance, Alpine memanggil metode
-// helper via wrapper yang kita berikan di bawah.
-window._sanitizeUrl = sanitizeUrl;
-window._escapeHtml = escapeHtml;
+
 
 // ── Upload gambar ke server ────────────────────────────────────────────────
 
@@ -260,12 +252,10 @@ const ImageFigureNode = Node.create({
     },
 
     renderHTML({ HTMLAttributes }) {
-        const alignClass = {
-            left: "img-figure--left",
-            center: "img-figure--center",
-            right: "img-figure--right",
-            justify: "img-figure--left",
-        }[HTMLAttributes.align || "left"] ?? "img-figure--left";
+        const align = HTMLAttributes.align || ALIGN.LEFT;
+        const alignClass = align === ALIGN.JUSTIFY
+            ? "img-figure--left"
+            : `img-figure--${align}`;
 
         const imgAttrs = {
             src: HTMLAttributes.src || "",
@@ -662,11 +652,6 @@ window.initWysiwyg = function ({
                 return doc.body.innerHTML;
             },
 
-            // FIX: Ctrl+A menghasilkan AllSelection (from:0, to:N, $from=doc).
-            // ProseMirror tidak punya behavior default untuk collapse AllSelection
-            // via arrow keys — cursor tidak bergerak sama sekali.
-            // Solusi: intercept arrow kiri/kanan saat selection adalah AllSelection,
-            // collapse ke ujung kiri (ArrowLeft) atau kanan (ArrowRight) dokumen.
             handleKeyDown(view, event) {
                 if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return false;
                 if (event.shiftKey || event.metaKey || event.ctrlKey) return false;
@@ -674,24 +659,15 @@ window.initWysiwyg = function ({
                 const { state } = view;
                 const { selection, doc, tr } = state;
 
-                // Hanya handle AllSelection
+                // Hanya handle AllSelection — hasil Ctrl+A
+                // ProseMirror tidak collapse AllSelection via arrow keys secara default
                 if (!(selection instanceof AllSelection)) return false;
 
-                if (event.key === "ArrowLeft") {
-                    // Collapse ke posisi paling awal dokumen
-                    const $start = doc.resolve(0);
-                    view.dispatch(tr.setSelection(TextSelection.near($start, 1)));
-                    return true;
-                }
-
-                if (event.key === "ArrowRight") {
-                    // Collapse ke posisi paling akhir dokumen
-                    const $end = doc.resolve(doc.content.size);
-                    view.dispatch(tr.setSelection(TextSelection.near($end, -1)));
-                    return true;
-                }
-
-                return false;
+                const isLeft = event.key === "ArrowLeft";
+                const pos = isLeft ? 0 : doc.content.size;
+                const bias = isLeft ? 1 : -1;
+                view.dispatch(tr.setSelection(TextSelection.near(doc.resolve(pos), bias)));
+                return true;
             },
         },
         extensions: [
@@ -700,18 +676,7 @@ window.initWysiwyg = function ({
             TextAlign.configure({ types: [NODE_NAMES.HEADING, NODE_NAMES.PARAGRAPH] }),
             Link.configure({ openOnClick: false }),
             Image,
-            TextStyle.extend({
-                addAttributes() {
-                    return {
-                        ...this.parent?.(),
-                        fontSize: {
-                            default: null,
-                            parseHTML: (el) => el.style.fontSize || null,
-                            renderHTML: (attrs) => attrs.fontSize ? { style: `font-size: ${attrs.fontSize}` } : {},
-                        },
-                    };
-                },
-            }),
+            TextStyle,
             Color,
             Highlight.configure({ multicolor: true }),
             Table.configure({ resizable: true }),
@@ -739,12 +704,14 @@ window.initWysiwyg = function ({
         },
     });
 
-    // FIX: kembalikan objek dengan helper — Alpine tidak perlu akses window._getFigureAlign
+    // Kembalikan public API — Alpine mengakses semua helper lewat instance ini,
+    // tidak ada yang di-expose ke window kecuali initWysiwyg itu sendiri.
     return {
         editor,
-        getFigureAlign: () => getFigureAlign(editor),
+        getFigureAlign: () => getFigureAlign(editor.state),
         getFigurePos: () => getFigurePos(editor.state),
-        /** Bersihkan instance dari registry global + destroy editor */
+        sanitizeUrl,
+        escapeHtml,
         destroy() {
             editor.destroy();
         },

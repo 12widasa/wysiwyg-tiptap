@@ -25,8 +25,7 @@
     <div x-show="inTable" x-cloak x-transition
         class="flex flex-wrap justify-center items-center gap-1 px-3 py-2 border-b border-gray-200 bg-gray-50">
         <span class="text-xs text-gray-400 font-mono mr-2">Table:</span>
-        <button type="button" @click="cmd('addColumnBefore')" title="Tambah Kolom Kiri"
-            class="flex items-center justify-center w-[30px] h-[30px] rounded text-gray-600 hover:bg-gray-100 transition-colors">
+        <button type="button" @click="cmd('addColumnBefore')" title="Tambah Kolom Kiri" class="wy-btn">
             <svg class="w-[15px] h-[15px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                 stroke-linecap="round" stroke-linejoin="round">
                 <rect x="3" y="3" width="18" height="18" rx="2" />
@@ -35,8 +34,7 @@
                 <line x1="3" y1="9" x2="9" y2="9" />
             </svg>
         </button>
-        <button type="button" @click="cmd('addColumnAfter')" title="Tambah Kolom Kanan"
-            class="flex items-center justify-center w-[30px] h-[30px] rounded text-gray-600 hover:bg-gray-100 transition-colors">
+        <button type="button" @click="cmd('addColumnAfter')" title="Tambah Kolom Kanan" class="wy-btn">
             <svg class="w-[15px] h-[15px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                 stroke-linecap="round" stroke-linejoin="round">
                 <rect x="3" y="3" width="18" height="18" rx="2" />
@@ -45,8 +43,7 @@
                 <line x1="15" y1="12" x2="21" y2="12" />
             </svg>
         </button>
-        <button type="button" @click="cmd('deleteColumn')" title="Hapus Kolom"
-            class="flex items-center justify-center w-[30px] h-[30px] rounded text-gray-600 hover:bg-gray-100 transition-colors">
+        <button type="button" @click="cmd('deleteColumn')" title="Hapus Kolom" class="wy-btn">
             <svg class="w-[15px] h-[15px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                 stroke-linecap="round" stroke-linejoin="round">
                 <rect x="3" y="3" width="18" height="18" rx="2" />
@@ -56,8 +53,7 @@
             </svg>
         </button>
         <div class="w-px h-[18px] bg-gray-300 mx-1 shrink-0"></div>
-        <button type="button" @click="cmd('addRowBefore')" title="Tambah Baris Atas"
-            class="flex items-center justify-center w-[30px] h-[30px] rounded text-gray-600 hover:bg-gray-100 transition-colors">
+        <button type="button" @click="cmd('addRowBefore')" title="Tambah Baris Atas" class="wy-btn">
             <svg class="w-[15px] h-[15px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                 stroke-linecap="round" stroke-linejoin="round">
                 <rect x="3" y="3" width="18" height="18" rx="2" />
@@ -66,8 +62,7 @@
                 <line x1="9" y1="6" x2="15" y2="6" />
             </svg>
         </button>
-        <button type="button" @click="cmd('addRowAfter')" title="Tambah Baris Bawah"
-            class="flex items-center justify-center w-[30px] h-[30px] rounded text-gray-600 hover:bg-gray-100 transition-colors">
+        <button type="button" @click="cmd('addRowAfter')" title="Tambah Baris Bawah" class="wy-btn">
             <svg class="w-[15px] h-[15px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                 stroke-linecap="round" stroke-linejoin="round">
                 <rect x="3" y="3" width="18" height="18" rx="2" />
@@ -76,8 +71,7 @@
                 <line x1="9" y1="18" x2="15" y2="18" />
             </svg>
         </button>
-        <button type="button" @click="cmd('deleteRow')" title="Hapus Baris"
-            class="flex items-center justify-center w-[30px] h-[30px] rounded text-gray-600 hover:bg-gray-100 transition-colors">
+        <button type="button" @click="cmd('deleteRow')" title="Hapus Baris" class="wy-btn">
             <svg class="w-[15px] h-[15px]" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="3" y="3" width="18" height="18" rx="2" />
@@ -88,7 +82,7 @@
         </button>
         <div class="w-px h-[18px] bg-gray-300 mx-1 shrink-0"></div>
         <button type="button" @click="cmd('deleteTable')" title="Hapus Table"
-            class="flex items-center justify-center w-[30px] h-[30px] rounded text-red-400 hover:bg-red-50 transition-colors">
+            class="wy-btn text-red-400 hover:bg-red-50">
             <svg class="w-[15px] h-[15px]" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="3 6 5 6 21 6" />
@@ -186,7 +180,6 @@
 
                         // ── Toolbar state ──
                         structLabel: 'Paragraph',
-                        fontSize: '15px',
                         inTable: false,
                         statWords: '0 words',
                         statChars: '0 chars',
@@ -264,16 +257,6 @@
                             return _ed()?.isActive(name, attrs) ?? false;
                         },
 
-                        setFontSize(size) {
-                            const ed = _ed();
-                            if (!ed) return;
-                            ed.chain().setMark('textStyle', {
-                                fontSize: size + 'px'
-                            }).run();
-                            ed.view.focus();
-                            this.fontSize = size + 'px';
-                        },
-
                         setAlign(align) {
                             const ed = _ed();
                             if (!ed) return;
@@ -348,7 +331,7 @@
                             const ed = _ed();
                             if (!ed) return;
 
-                            const safeUrl = window._sanitizeUrl(this.linkBubble.url.trim());
+                            const safeUrl = _instance.sanitizeUrl(this.linkBubble.url.trim());
                             if (!safeUrl) {
                                 this.closeLinkBubble();
                                 return;
@@ -356,7 +339,7 @@
 
                             const sel = this._savedSelection;
                             // FIX: escape title agar tidak bisa inject HTML via link bubble
-                            const safeTitle = window._escapeHtml(this.linkBubble.title.trim());
+                            const safeTitle = _instance.escapeHtml(this.linkBubble.title.trim());
                             const linkAttrs = {
                                 href: safeUrl,
                                 target: '_blank',
@@ -431,7 +414,6 @@
                             const ed = _ed();
                             if (!ed) return;
                             this._syncStructLabel(ed);
-                            this.fontSize = ed.getAttributes('textStyle').fontSize || '15px';
                             this.inTable = ed.isActive('table');
                             this._syncNodeName(ed);
                         },

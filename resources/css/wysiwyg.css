@@ -5,16 +5,20 @@
      - Shared prose typography (.wysiwyg-prose) — dipakai editor & display
      - img-figure: resize, selection highlight, caption, error state
      - img-dropzone: dashed border, drag-over, file icon
+     - Reusable component classes: .wy-btn, .wy-dd-item
      - [x-cloak] Alpine helper
+
+   Warna brand (--color-brand, --color-brand-light, --color-brand-dark)
+   didefinisikan di app.css @theme — bukan di sini.
+   Warna non-brand (border, bg, text) didefinisikan di bawah sebagai token
+   internal component agar wysiwyg.css tetap self-contained saat di-copas.
    ============================================================================= */
 
 /* ── Alpine cloak ──────────────────────────────────────────────────────────── */
 [x-cloak] { display: none !important; }
 
-/* ── CSS custom properties (design tokens) ────────────────────────────────── */
+/* ── CSS custom properties — non-brand design tokens ──────────────────────── */
 :root {
-    --wy-brand:        #1447E6;
-    --wy-brand-light:  #e8eefb;
     --wy-border:       #e4e2dc;
     --wy-border-muted: #cccac4;
     --wy-bg-subtle:    #f3f2ef;
@@ -23,17 +27,46 @@
     --wy-placeholder:  #c0bdb7;
 }
 
+/* ── Reusable component classes ────────────────────────────────────────────── */
+
+/* Toolbar icon button — menggantikan class Tailwind panjang yang diulang belasan kali */
+.wy-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 4px;
+    color: #4b5563;
+    flex-shrink: 0;
+    transition: background-color 0.15s;
+}
+.wy-btn:hover { background-color: #f3f4f6; }
+
+/* Dropdown menu item */
+.wy-dd-item {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    font-size: 0.875rem;
+    color: #374151;
+    border-radius: 4px;
+    transition: background-color 0.15s;
+    text-align: left;
+}
+.wy-dd-item:hover { background-color: #f3f4f6; }
+
 /* ── Toolbar keyboard focus indicator ─────────────────────────────────────── */
-/* Tambahkan focus ring via CSS agar tidak perlu tambah class di tiap button */
 [role="toolbar"] button:focus-visible,
 [role="toolbar"] [role="button"]:focus-visible {
-    outline: 2px solid var(--wy-brand);
+    outline: 2px solid var(--color-brand);
     outline-offset: 1px;
     border-radius: 4px;
 }
 
 /* ── ProseMirror internals ─────────────────────────────────────────────────── */
-/* Tidak bisa di-Tailwind: target internal class ProseMirror & pseudo-element */
 .wysiwyg-editor .ProseMirror {
     outline: none;
     position: relative;
@@ -44,9 +77,8 @@
     pointer-events: none;
     position: absolute;
 }
-/* ProseMirror table cell selection — hanya bisa via class internal */
 .wysiwyg-editor .selectedCell {
-    background: var(--wy-brand-light) !important;
+    background: var(--color-brand-light) !important;
 }
 
 /* ── Shared prose typography ───────────────────────────────────────────────── */
@@ -54,10 +86,6 @@
    .wysiwyg-prose dipakai DUA konteks:
      1. .wysiwyg-editor  — contenteditable area (Tiptap)
      2. .prose-content   — display output di halaman show
-
-   Gunakan salah satu di blade:
-     Editor : class="wysiwyg-editor wysiwyg-prose ..."
-     Display: class="prose-content wysiwyg-prose ..."
 
    Semua rule di sini tidak bisa jadi Tailwind karena:
    - Target tag HTML generik (h1-h6, p, ul, blockquote, dll.) di dalam scope
@@ -77,7 +105,7 @@
 .wysiwyg-prose u          { text-decoration: underline; text-underline-offset: 3px; }
 .wysiwyg-prose s          { text-decoration: line-through; color: var(--wy-text-muted); }
 .wysiwyg-prose mark       { border-radius: 2px; padding: 0 2px; }
-.wysiwyg-prose a          { color: var(--wy-brand); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.wysiwyg-prose a          { color: var(--color-brand); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 
 /* Tailwind preflight me-reset list-style ke none secara global.
    !important diperlukan agar .wysiwyg-prose menang dari reset tersebut. */
@@ -86,14 +114,13 @@
 .wysiwyg-prose ul         { list-style-type: disc !important; }
 .wysiwyg-prose ol         { list-style-type: decimal !important; }
 .wysiwyg-prose li         { margin: 0.2em 0; display: list-item !important; line-height: 1.8; }
-/* Override !important di atas — task list li harus flex, bukan list-item */
 .wysiwyg-prose ul[data-type="taskList"] li { display: flex !important; list-style: none !important; }
 
 .wysiwyg-prose blockquote {
-    border-left: 3px solid var(--wy-brand);
+    border-left: 3px solid var(--color-brand);
     padding: 0.5em 1.2em;
     margin: 0.7em 0;
-    background: var(--wy-brand-light);
+    background: var(--color-brand-light);
     border-radius: 0 4px 4px 0;
     color: var(--wy-text-body);
     font-style: italic;
@@ -118,27 +145,21 @@
 .wysiwyg-prose tr:hover td  { background: var(--wy-bg-subtle); }
 
 /* ── Task list ── */
-/* Tidak bisa Tailwind: attribute selector [data-type] + nested structure */
-
-/* Output (show.blade.php) */
 .wysiwyg-prose ul[data-type="taskList"]             { list-style: none; padding-left: 0; }
 .wysiwyg-prose ul[data-type="taskList"] li          { display: flex; align-items: center; gap: 8px; }
 .wysiwyg-prose ul[data-type="taskList"] li > label  { display: flex; align-items: center; position: relative; top: 2px; }
 .wysiwyg-prose ul[data-type="taskList"] li input[type="checkbox"] {
     cursor: pointer;
-    accent-color: var(--wy-brand); /* tidak ada Tailwind utility untuk accent-color custom */
+    accent-color: var(--color-brand);
 }
 
-/* Editor aktif (Tiptap/ProseMirror) — FIX: bullet & checkbox muncul dobel
-   karena ul default masih punya list-style. Harus di-reset di sini juga.
-   Tiptap v3: ul[data-type="taskList"] > li[data-type="taskItem"] > label + div */
 .wysiwyg-editor .ProseMirror ul[data-type="taskList"]                          { list-style: none; padding-left: 0; }
 .wysiwyg-editor .ProseMirror ul[data-type="taskList"] li[data-type="taskItem"] { display: flex; align-items: center; gap: 8px; list-style: none; }
 .wysiwyg-editor .ProseMirror ul[data-type="taskList"] li[data-type="taskItem"] > label { cursor: pointer; display: flex; align-items: center; position: relative; top: 2px; }
 .wysiwyg-editor .ProseMirror ul[data-type="taskList"] li[data-type="taskItem"] > div   { flex: 1; min-width: 0; }
 .wysiwyg-editor .ProseMirror ul[data-type="taskList"] li[data-type="taskItem"] input[type="checkbox"] {
     cursor: pointer;
-    accent-color: var(--wy-brand);
+    accent-color: var(--color-brand);
 }
 
 /* ── Figure display (prose-content / output) ── */
@@ -146,8 +167,7 @@
 .wysiwyg-prose figure.img-figure img        { border-radius: 8px; border: 1px solid var(--wy-border); max-width: 100%; }
 .wysiwyg-prose figure.img-figure figcaption { font-size: 12px; color: var(--wy-text-muted); text-align: center; padding: 5px 4px 2px; line-height: 1.4; }
 
-/* ── Image Figure (editor node view — div, bukan figure) ───────────────────── */
-/* Tidak bisa Tailwind: JS-generated DOM, transition, resize handle opacity */
+/* ── Image Figure (editor node view) ───────────────────────────────────────── */
 .img-figure {
     display: inline-block;
     position: relative;
@@ -165,11 +185,10 @@
     cursor: default;
 }
 .img-figure.selected img,
-.img-figure:hover img       { border-color: var(--wy-brand); }
+.img-figure:hover img       { border-color: var(--color-brand); }
 
 .img-figure__img            { width: 100%; height: auto; display: block; }
 
-/* Alignment — diset via JS applyAlign(), tidak bisa Tailwind karena dynamic */
 .img-figure--left           { margin-left: 0;    margin-right: auto; display: block; }
 .img-figure--center         { margin-left: auto; margin-right: auto; display: block; }
 .img-figure--right          { margin-left: auto; margin-right: 0;    display: block; }
@@ -182,7 +201,7 @@
     width: 14px;
     height: 14px;
     cursor: se-resize;
-    background: var(--wy-brand);
+    background: var(--color-brand);
     border-radius: 3px;
     opacity: 0;
     transition: opacity 0.15s;
@@ -195,7 +214,7 @@
 .img-figure.selected .resize-handle { opacity: 1; }
 .resize-handle svg { width: 8px; height: 8px; stroke: #fff; fill: none; stroke-width: 2; pointer-events: none; }
 
-/* ── Caption (textarea di dalam node view) ── */
+/* ── Caption ── */
 .img-caption {
     display: block;
     width: 100%;
@@ -222,7 +241,6 @@
 }
 
 /* ── Image Dropzone ─────────────────────────────────────────────────────────── */
-/* Tidak bisa Tailwind: dashed border, transition kombinasi, JS-generated DOM */
 .img-dropzone {
     display: flex;
     flex-direction: column;
@@ -240,9 +258,8 @@
     position: relative;
 }
 .img-dropzone:hover,
-.img-dropzone.drag-over     { border-color: var(--wy-brand); background: var(--wy-brand-light); }
+.img-dropzone.drag-over     { border-color: var(--color-brand); background: var(--color-brand-light); }
 
-/* File input overlay — tidak bisa Tailwind: inset:0 shorthand + opacity trick */
 .img-dropzone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
 
 .img-dropzone-icon          { width: 48px; height: 56px; position: relative; pointer-events: none; }
@@ -260,11 +277,11 @@
     width: 22px;
     height: 22px;
     border-radius: 50%;
-    background: var(--wy-brand);
+    background: var(--color-brand);
     display: flex;
     align-items: center;
     justify-content: center;
 }
 .img-dropzone-text          { font-size: 13px; color: var(--wy-text-body); pointer-events: none; text-align: center; }
-.img-dropzone-text strong   { color: var(--wy-brand); text-decoration: underline; text-underline-offset: 2px; }
+.img-dropzone-text strong   { color: var(--color-brand); text-decoration: underline; text-underline-offset: 2px; }
 .img-dropzone-hint          { font-size: 11px; color: var(--wy-text-muted); pointer-events: none; }

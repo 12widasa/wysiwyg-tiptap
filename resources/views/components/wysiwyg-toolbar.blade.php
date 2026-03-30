@@ -14,37 +14,29 @@
         <div x-show="open" x-cloak x-transition
             class="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[156px] p-1">
             <button type="button" @click="cmd('setParagraph'); open=false"
-                :class="isActive('paragraph') && 'bg-brand-light text-brand'"
-                class="dd-item w-full flex items-center gap-2 px-2.5 py-1.5 text-sm text-gray-700 hover:bg-gray-100 rounded transition-colors">Paragraph</button>
+                :class="isActive('paragraph') && 'bg-brand-light text-brand'" class="wy-dd-item">Paragraph</button>
             <div class="h-px bg-gray-100 my-1"></div>
             <button type="button" @click="cmd('toggleHeading',{level:1}); open=false"
                 :class="isActive('heading', { level: 1 }) && 'bg-brand-light text-brand'"
-                class="w-full flex items-center gap-2 px-2.5 py-1.5 hover:bg-gray-100 rounded transition-colors text-left font-bold text-[17px]">Heading
-                1</button>
+                class="wy-dd-item font-bold text-[17px]">Heading 1</button>
             <button type="button" @click="cmd('toggleHeading',{level:2}); open=false"
                 :class="isActive('heading', { level: 2 }) && 'bg-brand-light text-brand'"
-                class="w-full flex items-center gap-2 px-2.5 py-1.5 hover:bg-gray-100 rounded transition-colors text-left font-bold text-[15px]">Heading
-                2</button>
+                class="wy-dd-item font-bold text-[15px]">Heading 2</button>
             <button type="button" @click="cmd('toggleHeading',{level:3}); open=false"
                 :class="isActive('heading', { level: 3 }) && 'bg-brand-light text-brand'"
-                class="w-full flex items-center gap-2 px-2.5 py-1.5 hover:bg-gray-100 rounded transition-colors text-left font-semibold text-[13px]">Heading
-                3</button>
+                class="wy-dd-item font-semibold text-[13px]">Heading 3</button>
             <button type="button" @click="cmd('toggleHeading',{level:4}); open=false"
                 :class="isActive('heading', { level: 4 }) && 'bg-brand-light text-brand'"
-                class="w-full flex items-center gap-2 px-2.5 py-1.5 hover:bg-gray-100 rounded transition-colors text-left font-semibold text-[12px]">Heading
-                4</button>
+                class="wy-dd-item font-semibold text-[12px]">Heading 4</button>
             <button type="button" @click="cmd('toggleHeading',{level:5}); open=false"
                 :class="isActive('heading', { level: 5 }) && 'bg-brand-light text-brand'"
-                class="w-full flex items-center gap-2 px-2.5 py-1.5 hover:bg-gray-100 rounded transition-colors text-left font-semibold text-[11px]">Heading
-                5</button>
+                class="wy-dd-item font-semibold text-[11px]">Heading 5</button>
             <button type="button" @click="cmd('toggleHeading',{level:6}); open=false"
                 :class="isActive('heading', { level: 6 }) && 'bg-brand-light text-brand'"
-                class="w-full flex items-center gap-2 px-2.5 py-1.5 hover:bg-gray-100 rounded transition-colors text-left font-semibold text-[11px] text-gray-400">Heading
-                6</button>
+                class="wy-dd-item font-semibold text-[11px] text-gray-400">Heading 6</button>
             <div class="h-px bg-gray-100 my-1"></div>
             <button type="button" @click="cmd('toggleBlockquote'); open=false"
-                :class="isActive('blockquote') && 'bg-brand-light text-brand'"
-                class="w-full flex items-center gap-2 px-2.5 py-1.5 text-sm text-gray-700 hover:bg-gray-100 rounded transition-colors text-left">
+                :class="isActive('blockquote') && 'bg-brand-light text-brand'" class="wy-dd-item">
                 <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path
@@ -57,33 +49,11 @@
         </div>
     </div>
 
-    {{-- Font Size --}}
-    <div class="relative" x-data="{ open: false }" @click.outside="open = false">
-        <button type="button" @click="open = !open" :aria-expanded="open"
-            class="flex items-center justify-between gap-1 h-[30px] px-2 min-w-[52px] border border-gray-200 rounded text-xs font-mono text-gray-600 hover:bg-gray-100 hover:border-gray-300 transition-colors">
-            <span x-text="fontSize">15px</span>
-            <svg class="w-2.5 h-2.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="6 9 12 15 18 9" />
-            </svg>
-        </button>
-        <div x-show="open" x-cloak x-transition
-            class="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[80px] p-1">
-            <template x-for="size in [12,13,14,15,16,18,20,24,28,32,36]" :key="size">
-                <button type="button" @click="setFontSize(size); open=false"
-                    :class="fontSize === size + 'px' && 'bg-brand-light text-brand'"
-                    class="w-full flex items-center px-2.5 py-1.5 font-mono text-xs text-gray-700 hover:bg-gray-100 rounded transition-colors"
-                    x-text="size+'px'"></button>
-            </template>
-        </div>
-    </div>
-
     <div class="w-px h-[18px] bg-gray-300 mx-1 shrink-0"></div>
 
     {{-- Bold, Italic, Underline, Strike --}}
     <button type="button" @click="cmd('toggleBold')" :class="isActive('bold') && 'bg-brand-light text-brand'"
-        title="Bold" :aria-pressed="isActive('bold').toString()"
-        class="flex items-center justify-center w-[30px] h-[30px] rounded text-gray-600 hover:bg-gray-100 transition-colors shrink-0">
+        title="Bold" :aria-pressed="isActive('bold').toString()" class="wy-btn">
         <svg class="w-[15px] h-[15px] pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor"
             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M14 12a4 4 0 0 0 0-8H6v8" />
@@ -91,8 +61,7 @@
         </svg>
     </button>
     <button type="button" @click="cmd('toggleItalic')" :class="isActive('italic') && 'bg-brand-light text-brand'"
-        title="Italic" :aria-pressed="isActive('italic').toString()"
-        class="flex items-center justify-center w-[30px] h-[30px] rounded text-gray-600 hover:bg-gray-100 transition-colors shrink-0">
+        title="Italic" :aria-pressed="isActive('italic').toString()" class="wy-btn">
         <svg class="w-[15px] h-[15px] pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor"
             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="19" y1="4" x2="10" y2="4" />
@@ -102,8 +71,7 @@
     </button>
     <button type="button" @click="cmd('toggleUnderline')"
         :class="isActive('underline') && 'bg-brand-light text-brand'" title="Underline"
-        :aria-pressed="isActive('underline').toString()"
-        class="flex items-center justify-center w-[30px] h-[30px] rounded text-gray-600 hover:bg-gray-100 transition-colors shrink-0">
+        :aria-pressed="isActive('underline').toString()" class="wy-btn">
         <svg class="w-[15px] h-[15px] pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor"
             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M6 4v6a6 6 0 0 0 12 0V4" />
@@ -111,8 +79,7 @@
         </svg>
     </button>
     <button type="button" @click="cmd('toggleStrike')" :class="isActive('strike') && 'bg-brand-light text-brand'"
-        title="Strikethrough" :aria-pressed="isActive('strike').toString()"
-        class="flex items-center justify-center w-[30px] h-[30px] rounded text-gray-600 hover:bg-gray-100 transition-colors shrink-0">
+        title="Strikethrough" :aria-pressed="isActive('strike').toString()" class="wy-btn">
         <svg class="w-[15px] h-[15px] pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor"
             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M16 4H9a3 3 0 0 0-2.83 4" />
@@ -149,8 +116,7 @@
                 </template>
             </div>
             <div class="h-px bg-gray-100 my-1"></div>
-            <button type="button" @click="cmd('unsetHighlight'); open=false"
-                class="w-full flex items-center gap-2 px-2.5 py-1.5 text-sm text-gray-700 hover:bg-gray-100 rounded transition-colors">
+            <button type="button" @click="cmd('unsetHighlight'); open=false" class="wy-dd-item">
                 <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                     stroke-linecap="round" stroke-linejoin="round">
                     <line x1="18" y1="6" x2="6" y2="18" />
@@ -188,8 +154,7 @@
                 </template>
             </div>
             <div class="h-px bg-gray-100 my-1"></div>
-            <button type="button" @click="cmd('unsetColor'); open=false"
-                class="w-full flex items-center gap-2 px-2.5 py-1.5 text-sm text-gray-700 hover:bg-gray-100 rounded transition-colors">
+            <button type="button" @click="cmd('unsetColor'); open=false" class="wy-dd-item">
                 <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                     stroke-linecap="round" stroke-linejoin="round">
                     <line x1="18" y1="6" x2="6" y2="18" />
@@ -201,8 +166,7 @@
     </div>
 
     {{-- Clear Formatting --}}
-    <button type="button" @click="cmd('clearNodes'); cmd('unsetAllMarks')" title="Clear Formatting"
-        class="flex items-center justify-center w-[30px] h-[30px] rounded text-gray-600 hover:bg-gray-100 transition-colors shrink-0">
+    <button type="button" @click="cmd('clearNodes'); cmd('unsetAllMarks')" title="Clear Formatting" class="wy-btn">
         <svg class="w-[15px] h-[15px] pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor"
             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M4 7V4h16v3" />
@@ -218,8 +182,7 @@
     {{-- Lists --}}
     <button type="button" @click="cmd('toggleBulletList')"
         :class="isActive('bulletList') && 'bg-brand-light text-brand'" title="Bullet List"
-        :aria-pressed="isActive('bulletList').toString()"
-        class="flex items-center justify-center w-[30px] h-[30px] rounded text-gray-600 hover:bg-gray-100 transition-colors shrink-0">
+        :aria-pressed="isActive('bulletList').toString()" class="wy-btn">
         <svg class="w-[15px] h-[15px] pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor"
             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="8" y1="6" x2="21" y2="6" />
@@ -232,8 +195,7 @@
     </button>
     <button type="button" @click="cmd('toggleOrderedList')"
         :class="isActive('orderedList') && 'bg-brand-light text-brand'" title="Ordered List"
-        :aria-pressed="isActive('orderedList').toString()"
-        class="flex items-center justify-center w-[30px] h-[30px] rounded text-gray-600 hover:bg-gray-100 transition-colors shrink-0">
+        :aria-pressed="isActive('orderedList').toString()" class="wy-btn">
         <svg class="w-[15px] h-[15px] pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor"
             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="10" y1="6" x2="21" y2="6" />
@@ -246,8 +208,7 @@
     </button>
     <button type="button" @click="cmd('toggleTaskList')"
         :class="isActive('taskList') && 'bg-brand-light text-brand'" title="Task List"
-        :aria-pressed="isActive('taskList').toString()"
-        class="flex items-center justify-center w-[30px] h-[30px] rounded text-gray-600 hover:bg-gray-100 transition-colors shrink-0">
+        :aria-pressed="isActive('taskList').toString()" class="wy-btn">
         <svg class="w-[15px] h-[15px] pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor"
             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="m3 17 2 2 4-4" />
@@ -261,8 +222,7 @@
 
     {{-- Align --}}
     <button type="button" @click="setAlign('left')" :class="alignActive('left') && 'bg-brand-light text-brand'"
-        title="Align Left" :aria-pressed="alignActive('left').toString()"
-        class="flex items-center justify-center w-[30px] h-[30px] rounded text-gray-600 hover:bg-gray-100 transition-colors shrink-0">
+        title="Align Left" :aria-pressed="alignActive('left').toString()" class="wy-btn">
         <svg class="w-[15px] h-[15px] pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor"
             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="21" y1="6" x2="3" y2="6" />
@@ -271,8 +231,7 @@
         </svg>
     </button>
     <button type="button" @click="setAlign('center')" :class="alignActive('center') && 'bg-brand-light text-brand'"
-        title="Align Center" :aria-pressed="alignActive('center').toString()"
-        class="flex items-center justify-center w-[30px] h-[30px] rounded text-gray-600 hover:bg-gray-100 transition-colors shrink-0">
+        title="Align Center" :aria-pressed="alignActive('center').toString()" class="wy-btn">
         <svg class="w-[15px] h-[15px] pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor"
             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="21" y1="6" x2="3" y2="6" />
@@ -281,8 +240,7 @@
         </svg>
     </button>
     <button type="button" @click="setAlign('right')" :class="alignActive('right') && 'bg-brand-light text-brand'"
-        title="Align Right" :aria-pressed="alignActive('right').toString()"
-        class="flex items-center justify-center w-[30px] h-[30px] rounded text-gray-600 hover:bg-gray-100 transition-colors shrink-0">
+        title="Align Right" :aria-pressed="alignActive('right').toString()" class="wy-btn">
         <svg class="w-[15px] h-[15px] pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor"
             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="21" y1="6" x2="3" y2="6" />
@@ -292,8 +250,7 @@
     </button>
     <button type="button" @click="setAlign('justify')"
         :class="alignActive('justify') && 'bg-brand-light text-brand'" title="Justify"
-        :aria-pressed="alignActive('justify').toString()"
-        class="flex items-center justify-center w-[30px] h-[30px] rounded text-gray-600 hover:bg-gray-100 transition-colors shrink-0">
+        :aria-pressed="alignActive('justify').toString()" class="wy-btn">
         <svg class="w-[15px] h-[15px] pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor"
             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="21" y1="6" x2="3" y2="6" />
@@ -305,8 +262,7 @@
     <div class="w-px h-[18px] bg-gray-300 mx-1 shrink-0"></div>
 
     {{-- Indent / Outdent --}}
-    <button type="button" @click="cmd('indent')" title="Indent"
-        class="flex items-center justify-center w-[30px] h-[30px] rounded text-gray-600 hover:bg-gray-100 transition-colors shrink-0">
+    <button type="button" @click="cmd('indent')" title="Indent" class="wy-btn">
         <svg class="w-[15px] h-[15px] pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor"
             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="3 8 7 12 3 16" />
@@ -315,8 +271,7 @@
             <line x1="21" y1="18" x2="3" y2="18" />
         </svg>
     </button>
-    <button type="button" @click="cmd('outdent')" title="Outdent"
-        class="flex items-center justify-center w-[30px] h-[30px] rounded text-gray-600 hover:bg-gray-100 transition-colors shrink-0">
+    <button type="button" @click="cmd('outdent')" title="Outdent" class="wy-btn">
         <svg class="w-[15px] h-[15px] pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor"
             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="7 8 3 12 7 16" />
@@ -339,8 +294,7 @@
         </button>
         <div x-show="open" x-cloak x-transition
             class="absolute top-full right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[156px] p-1">
-            <button type="button" @click="openLinkBubble(); open=false"
-                class="w-full flex items-center gap-2 px-2.5 py-1.5 text-sm text-gray-700 hover:bg-gray-100 rounded transition-colors">
+            <button type="button" @click="openLinkBubble(); open=false" class="wy-dd-item">
                 <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
@@ -348,8 +302,7 @@
                 </svg>
                 Link
             </button>
-            <button type="button" @click="insertDropzone(); open=false"
-                class="w-full flex items-center gap-2 px-2.5 py-1.5 text-sm text-gray-700 hover:bg-gray-100 rounded transition-colors">
+            <button type="button" @click="insertDropzone(); open=false" class="wy-dd-item">
                 <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <rect x="3" y="3" width="18" height="18" rx="2" />
@@ -359,7 +312,7 @@
                 Image
             </button>
             <button type="button" @click="cmd('insertTable',{rows:3,cols:3,withHeaderRow:true}); open=false"
-                class="w-full flex items-center gap-2 px-2.5 py-1.5 text-sm text-gray-700 hover:bg-gray-100 rounded transition-colors">
+                class="wy-dd-item">
                 <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
@@ -368,8 +321,7 @@
                 </svg>
                 Table
             </button>
-            <button type="button" @click="cmd('setHorizontalRule'); open=false"
-                class="w-full flex items-center gap-2 px-2.5 py-1.5 text-sm text-gray-700 hover:bg-gray-100 rounded transition-colors">
+            <button type="button" @click="cmd('setHorizontalRule'); open=false" class="wy-dd-item">
                 <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="3" y1="12" x2="21" y2="12" />

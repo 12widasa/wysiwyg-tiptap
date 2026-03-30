@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Services\HtmlSanitizer;
 use HTMLPurifier;
 use HTMLPurifier_Config;
 use Illuminate\Support\ServiceProvider;
@@ -84,6 +85,10 @@ class AppServiceProvider extends ServiceProvider
             }
 
             return new HTMLPurifier($config);
+        });
+
+        $this->app->singleton(HtmlSanitizer::class, function ($app) {
+            return new HtmlSanitizer($app->make(HTMLPurifier::class));
         });
     }
 
