@@ -626,23 +626,6 @@ const IndentExtension = Extension.create({
  * @param {Function}    opts.onSelectionUpdate - callback(editor) saat selection berubah
  * @returns {{ editor, getFigureAlign, getFigurePos, destroy }}
  */
-// ── Sync ukuran custom checkbox dengan font-size teks ─────────────────────
-// em tidak bisa dipakai karena font-size diterapkan via inline style di <p>,
-// bukan di <li>. Solusi: baca font-size <p> lalu set width/height span secara JS.
-function syncCheckboxSizes(editorEl) {
-    const items = editorEl.querySelectorAll('li[data-type="taskItem"]');
-    items.forEach(li => {
-        const p = li.querySelector('p');
-        const span = li.querySelector('label > span');
-        if (!p || !span) return;
-        const fontSize = parseFloat(getComputedStyle(p).fontSize);
-        if (!fontSize) return;
-        const size = Math.round(fontSize * 0.85) + 'px';
-        span.style.width = size;
-        span.style.height = size;
-    });
-}
-
 window.initWysiwyg = function ({
     editorEl,
     initialContent = "",
@@ -748,12 +731,8 @@ window.initWysiwyg = function ({
             ImageFigureNode,
         ],
         content: initialContent || "",
-        onCreate({ editor }) {
-            syncCheckboxSizes(editor.view.dom);
-        },
         onUpdate({ editor }) {
             onUpdate?.(editor.getHTML(), editor.getText());
-            syncCheckboxSizes(editor.view.dom);
         },
         onSelectionUpdate({ editor }) {
             debouncedSelectionUpdate(editor);
