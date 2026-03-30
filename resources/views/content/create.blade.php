@@ -23,7 +23,8 @@
         @endif
 
         {{-- Form --}}
-        <form action="{{ route('content.store') }}" method="POST" x-data="{ submitting: false }" @submit="submitting = true">
+        <form action="{{ route('content.store') }}" method="POST" x-data="{ submitting: false, editorHtml: '' }"
+            @wysiwyg-update.window="editorHtml = $event.detail.html" @submit="submitting = true">
             @csrf
 
             {{-- WYSIWYG Editor component --}}

@@ -224,6 +224,12 @@
                                     uploadUrl: this.uploadUrl,
                                     onUpdate: (html, txt) => {
                                         this.editorHtml = html;
+                                        window.dispatchEvent(new CustomEvent(
+                                            'wysiwyg-update', {
+                                                detail: {
+                                                    html
+                                                }
+                                            }));
                                         const trimmed = txt.trim();
                                         this.statWords = (trimmed ? trimmed.split(/\s+/)
                                             .length : 0) + ' words';
