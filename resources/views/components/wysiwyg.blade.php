@@ -9,7 +9,7 @@
       $height      — min-height editor (px)
 --}}
 
-<div class="wy-card" x-data="wysiwygEditor({
+<div class="w-full relative bg-white border border-gray-200 rounded-xl shadow-sm mt-4" x-data="wysiwygEditor({
     id: '{{ $id }}',
     name: '{{ $name }}',
     value: {{ json_encode($value) }},
@@ -22,7 +22,7 @@
     @include('components.wysiwyg-toolbar')
 
     {{-- ── Scroll container: hanya area ini yang scroll ── --}}
-    <div class="wy-canvas-scroll" style="max-height: {{ $height }}px;">
+    <div class="overflow-y-auto" style="max-height: {{ $height }}px;">
 
         {{-- ── Editor Area ── --}}
         <div id="{{ $id }}"

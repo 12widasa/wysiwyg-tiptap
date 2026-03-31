@@ -14,7 +14,7 @@
         <div x-show="open" x-cloak x-transition class="wy-dropdown min-w-[156px]">
             <button type="button" @click="cmd('setParagraph'); open=false"
                 :class="isActive('paragraph') && 'bg-brand-light text-brand'" class="wy-dd-item">Paragraph</button>
-            <div class="wy-dd-divider"></div>
+            <div class="h-px bg-gray-100 my-1"></div>
             <button type="button" @click="cmd('toggleHeading',{level:1}); open=false"
                 :class="isActive('heading', { level: 1 }) && 'bg-brand-light text-brand'"
                 class="wy-dd-item font-bold text-[17px]">Heading 1</button>
@@ -33,7 +33,7 @@
             <button type="button" @click="cmd('toggleHeading',{level:6}); open=false"
                 :class="isActive('heading', { level: 6 }) && 'bg-brand-light text-brand'"
                 class="wy-dd-item font-semibold text-[11px] text-gray-400">Heading 6</button>
-            <div class="wy-dd-divider"></div>
+            <div class="h-px bg-gray-100 my-1"></div>
             <button type="button" @click="cmd('toggleBlockquote'); open=false"
                 :class="isActive('blockquote') && 'bg-brand-light text-brand'" class="wy-dd-item">
                 <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -48,7 +48,7 @@
         </div>
     </div>
 
-    <div class="wy-sep"></div>
+    <div class="w-px h-[18px] bg-gray-300 mx-1 shrink-0"></div>
 
     {{-- Bold, Italic, Underline, Strike --}}
     <button type="button" @click="cmd('toggleBold')" :class="isActive('bold') && 'bg-brand-light text-brand'"
@@ -87,12 +87,12 @@
         </svg>
     </button>
 
-    <div class="wy-sep"></div>
+    <div class="w-px h-[18px] bg-gray-300 mx-1 shrink-0"></div>
 
     {{-- Highlight --}}
     <div class="relative" x-data="{ open: false }" @click.outside="open = false">
         <button type="button" @click="open = !open" :aria-expanded="open"
-            class="flex items-center gap-1 h-[30px] px-2 rounded text-gray-600 hover:bg-gray-100 transition-colors wy-dd-trigger">
+            class="flex items-center gap-1 h-[30px] px-2 rounded text-gray-600 hover:bg-gray-100 transition-colors">
             <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                 stroke-linecap="round" stroke-linejoin="round">
                 <path d="m9 11-6 6v3h9l3-3" />
@@ -104,7 +104,7 @@
             </svg>
         </button>
         <div x-show="open" x-cloak x-transition class="wy-dropdown min-w-[196px]">
-            <p class="wy-color-label">Highlight
+            <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-wide px-2.5 pt-1.5 pb-1">Highlight
                 Color</p>
             <div class="grid grid-cols-8 gap-1 px-2.5 pb-2">
                 <template x-for="hex in hlColors" :key="hex">
@@ -112,7 +112,7 @@
                         class="wy-color-swatch" :style="`background-color:${hex}`"></button>
                 </template>
             </div>
-            <div class="wy-dd-divider"></div>
+            <div class="h-px bg-gray-100 my-1"></div>
             <button type="button" @click="cmd('unsetHighlight'); open=false" class="wy-dd-item">
                 <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                     stroke-linecap="round" stroke-linejoin="round">
@@ -127,7 +127,7 @@
     {{-- Text Color --}}
     <div class="relative" x-data="{ open: false }" @click.outside="open = false">
         <button type="button" @click="open = !open" :aria-expanded="open"
-            class="flex items-center gap-1 h-[30px] px-2 rounded text-gray-600 hover:bg-gray-100 transition-colors wy-dd-trigger">
+            class="flex items-center gap-1 h-[30px] px-2 rounded text-gray-600 hover:bg-gray-100 transition-colors">
             <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                 stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="4 7 4 4 20 4 20 7" />
@@ -140,15 +140,15 @@
             </svg>
         </button>
         <div x-show="open" x-cloak x-transition class="wy-dropdown min-w-[196px]">
-            <p class="wy-color-label">Text
-                Color</p>
+            <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-wide px-2.5 pt-1.5 pb-1">Text Color
+            </p>
             <div class="grid grid-cols-8 gap-1 px-2.5 pb-2">
                 <template x-for="hex in txtColors" :key="hex">
                     <button type="button" @click="cmd('setColor',hex); open=false" class="wy-color-swatch"
                         :style="`background-color:${hex}; ${hex==='#ffffff' ? 'border-color:#ccc' : ''}`"></button>
                 </template>
             </div>
-            <div class="wy-dd-divider"></div>
+            <div class="h-px bg-gray-100 my-1"></div>
             <button type="button" @click="cmd('unsetColor'); open=false" class="wy-dd-item">
                 <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                     stroke-linecap="round" stroke-linejoin="round">
@@ -172,7 +172,7 @@
         </svg>
     </button>
 
-    <div class="wy-sep"></div>
+    <div class="w-px h-[18px] bg-gray-300 mx-1 shrink-0"></div>
 
     {{-- Lists --}}
     <button type="button" @click="cmd('toggleBulletList')"
@@ -213,7 +213,7 @@
         </svg>
     </button>
 
-    <div class="wy-sep"></div>
+    <div class="w-px h-[18px] bg-gray-300 mx-1 shrink-0"></div>
 
     {{-- Align --}}
     <button type="button" @click="setAlign('left')" :class="alignActive('left') && 'bg-brand-light text-brand'"
@@ -254,7 +254,7 @@
         </svg>
     </button>
 
-    <div class="wy-sep"></div>
+    <div class="w-px h-[18px] bg-gray-300 mx-1 shrink-0"></div>
 
     {{-- Indent / Outdent --}}
     <button type="button" @click="cmd('indent')" title="Indent" class="wy-btn">
@@ -361,7 +361,7 @@
         </svg>
     </button>
 
-    <div class="wy-sep"></div>
+    <div class="w-px h-[18px] bg-gray-300 mx-1 shrink-0"></div>
 
     <button type="button" @click="cmd('addRowBefore')" title="Tambah Baris Atas" class="wy-btn">
         <svg class="w-[15px] h-[15px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -391,7 +391,7 @@
         </svg>
     </button>
 
-    <div class="wy-sep"></div>
+    <div class="w-px h-[18px] bg-gray-300 mx-1 shrink-0"></div>
 
     <button type="button" @click="cmd('deleteTable')" title="Hapus Table"
         class="wy-btn text-red-400 hover:bg-red-50">

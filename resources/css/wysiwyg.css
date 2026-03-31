@@ -5,10 +5,16 @@
      - Shared prose typography (.wysiwyg-prose) — dipakai editor & display
      - img-figure: resize, selection highlight, caption, error state
      - img-dropzone: dashed border, drag-over, file icon
-     - Reusable component classes: .wy-btn, .wy-sep, .wy-dd-item,
-       .wy-dropdown, .wy-color-swatch, .wy-color-label
-     - Editor layout: .wy-card, .wy-canvas-scroll
+     - Reusable component classes dengan :hover / pseudo-selector:
+         .wy-btn, .wy-dropdown, .wy-dd-item, .wy-color-swatch
      - [x-cloak] Alpine helper
+
+   Class yang DIPINDAH ke Tailwind inline (tidak ada pseudo/state):
+     .wy-card         → wysiwyg.blade.php
+     .wy-canvas-scroll → wysiwyg.blade.php
+     .wy-sep          → wysiwyg-toolbar.blade.php (7x)
+     .wy-dd-divider   → wysiwyg-toolbar.blade.php (4x)
+     .wy-color-label  → wysiwyg-toolbar.blade.php (2x)
 
    Warna brand (--color-brand, --color-brand-light, --color-brand-dark)
    didefinisikan di app.css @theme — bukan di sini.
@@ -31,27 +37,9 @@
     --wy-placeholder: #c0bdb7;
 }
 
-/* ── Editor card layout ────────────────────────────────────────────────────── */
-
-/* Card utama: border, shadow, gap dari atas halaman */
-.wy-card {
-    width: 100%;
-    position: relative;
-    background: #fff;
-    border: 1px solid #e5e7eb;
-    border-radius: 0.75rem;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, .05);
-    margin-top: 1rem;
-}
-
-/* Scroll container canvas — hanya area ini yang scroll, bukan halaman */
-.wy-canvas-scroll {
-    overflow-y: auto;
-}
-
 /* ── Reusable component classes ────────────────────────────────────────────── */
 
-/* Toolbar icon button */
+/* Toolbar icon button — dipakai 21x, :hover butuh CSS */
 .wy-btn {
     display: flex;
     align-items: center;
@@ -68,16 +56,7 @@
     background-color: #f3f4f6;
 }
 
-/* Toolbar separator vertikal */
-.wy-sep {
-    width: 1px;
-    height: 18px;
-    background: #d1d5db;
-    margin-inline: 0.25rem;
-    flex-shrink: 0;
-}
-
-/* Dropdown panel */
+/* Dropdown panel — dipakai 4x, ada !left-auto override di satu instance */
 .wy-dropdown {
     position: absolute;
     top: 100%;
@@ -91,7 +70,7 @@
     padding: 0.25rem;
 }
 
-/* Dropdown menu item */
+/* Dropdown menu item — dipakai 14x, :hover butuh CSS */
 .wy-dd-item {
     width: 100%;
     display: flex;
@@ -109,14 +88,7 @@
     background-color: #f3f4f6;
 }
 
-/* Dropdown divider */
-.wy-dd-divider {
-    height: 1px;
-    background: #f3f4f6;
-    margin: 0.25rem 0;
-}
-
-/* Color swatch button */
+/* Color swatch button — :hover transform butuh CSS */
 .wy-color-swatch {
     width: 20px;
     height: 20px;
@@ -128,16 +100,6 @@
 
 .wy-color-swatch:hover {
     transform: scale(1.1);
-}
-
-/* Color section label */
-.wy-color-label {
-    font-size: 10px;
-    font-weight: 600;
-    color: #9ca3af;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    padding: 6px 10px 4px;
 }
 
 /* ── Toolbar keyboard focus indicator ─────────────────────────────────────── */

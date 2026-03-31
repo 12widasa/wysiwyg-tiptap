@@ -13,7 +13,6 @@ import { TableHeader } from "@tiptap/extension-table-header";
 import Placeholder from "@tiptap/extension-placeholder";
 import TaskList from "@tiptap/extension-task-list";
 import TaskItem from "@tiptap/extension-task-item";
-import Image from "@tiptap/extension-image";
 import { TextSelection, AllSelection } from "prosemirror-state";
 
 // ── Constants ──────────────────────────────────────────────────────────────
@@ -682,7 +681,6 @@ window.initWysiwyg = function ({
             Underline,
             TextAlign.configure({ types: [NODE_NAMES.HEADING, NODE_NAMES.PARAGRAPH] }),
             Link.configure({ openOnClick: false }),
-            Image,
             TextStyle,
             Color,
             Highlight.configure({ multicolor: true }),

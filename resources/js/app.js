@@ -1,6 +1,3 @@
-// import "./bootstrap";
-// import "./wysiwyg";
-
 import "./bootstrap";
 
 import Alpine from "alpinejs";
