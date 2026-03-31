@@ -9,7 +9,7 @@
       $height      — min-height editor (px)
 --}}
 
-<div class="w-full relative bg-white border border-gray-200 rounded-xl shadow-sm" x-data="wysiwygEditor({
+<div class="wy-card" x-data="wysiwygEditor({
     id: '{{ $id }}',
     name: '{{ $name }}',
     value: {{ json_encode($value) }},
@@ -18,14 +18,19 @@
     height: {{ $height }},
 })" x-ref="shell">
 
-    {{-- ── Toolbar ── --}}
+    {{-- ── Toolbar (sticky di dalam scroll container card ini) ── --}}
     @include('components.wysiwyg-toolbar')
 
-    {{-- ── Editor Area ── --}}
-    <div id="{{ $id }}"
-        class="wysiwyg-editor wysiwyg-prose outline-none px-12 py-7 text-[15px] leading-[1.8] text-gray-900"
-        style="min-height: {{ $height }}px; caret-color: var(--color-brand)" aria-label="Editor"
-        aria-multiline="true">
+    {{-- ── Scroll container: hanya area ini yang scroll ── --}}
+    <div class="wy-canvas-scroll" style="max-height: {{ $height }}px;">
+
+        {{-- ── Editor Area ── --}}
+        <div id="{{ $id }}"
+            class="wysiwyg-editor wysiwyg-prose outline-none px-12 py-7 text-[15px] leading-[1.8] text-gray-900"
+            style="min-height: {{ $height }}px; caret-color: var(--color-brand)" aria-label="Editor"
+            aria-multiline="true">
+        </div>
+
     </div>
 
     {{-- ── Status Bar ── --}}
