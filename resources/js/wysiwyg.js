@@ -238,11 +238,35 @@ const ImageFigureNode = Node.create({
 
     addAttributes() {
         return {
-            src: { default: null },
-            alt: { default: "" },
-            width: { default: null },
-            caption: { default: "" },
-            align: { default: ALIGN.LEFT },
+            src: {
+                default: null,
+                // renderHTML menyimpan src ke data-src pada <figure>.
+                // parseHTML harus membacanya kembali dari data-src,
+                // fallback ke <img src> jika data-src tidak ada.
+                parseHTML: (el) =>
+                    el.getAttribute("data-src") ||
+                    el.querySelector("img")?.getAttribute("src") ||
+                    null,
+            },
+            alt: {
+                default: "",
+                parseHTML: (el) =>
+                    el.getAttribute("data-alt") ||
+                    el.querySelector("img")?.getAttribute("alt") ||
+                    "",
+            },
+            width: {
+                default: null,
+                parseHTML: (el) => el.getAttribute("data-width") || null,
+            },
+            caption: {
+                default: "",
+                parseHTML: (el) => el.getAttribute("data-caption") || "",
+            },
+            align: {
+                default: ALIGN.LEFT,
+                parseHTML: (el) => el.getAttribute("data-align") || ALIGN.LEFT,
+            },
         };
     },
 
